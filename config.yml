@@ -1,0 +1,12 @@
+messages:
+  login: '&e@PLAYER@ joined the game.. and it''s their &cbirthday &etoday!'
+  announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto @PLAYER@ -=-=-=-'
+  gift: '&dWe hope you like your birthday gifts (and money)!!'
+money: 1000
+items:
+  - CAKE,1
+  - cookie,5
+  - blah,1
+  - diamond,5
+  - emerald,5
+  - beacon,1

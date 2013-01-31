@@ -1,0 +1,10 @@
+name: BirthdayGift
+main: au.com.addstar.birthdaygift.BirthdayGift
+version: 0.0.1
+description: Allow users to set their birthday and receive gifts on their birthday
+
+commands:
+  birthday:
+    description: Set your birthday (to receive birthday gifts)
+  bgift:
+    description: BirthdayGift admin command
