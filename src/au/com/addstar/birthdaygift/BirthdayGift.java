@@ -17,10 +17,7 @@ import net.milkbowl.vault.economy.EconomyResponse;
 import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
 import net.milkbowl.vault.permission.Permission;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -37,11 +34,11 @@ public final class BirthdayGift extends JavaPlugin {
 	private static final Logger logger = Logger.getLogger("BirthdayGift");
 	public BirthdayGift plugin;
 	public DBConnection dbcon = null;
-    public static Economy econ = null;
-    public static Permission perms = null;
-    public static Chat chat = null;
+	public static Economy econ = null;
+	public static Permission perms = null;
+	public static Chat chat = null;
     
-	class BirthdayRecord {
+	static class BirthdayRecord {
 		String playerName = "";
 		Date birthdayDate = null;
 		Date lastGiftDate = null;
@@ -56,6 +53,8 @@ public final class BirthdayGift extends JavaPlugin {
 
 		// Read (or initialise) plugin config file
 		getConfig().options().copyDefaults(true);
+		getCommand("birthday").setExecutor(new CommandBirthday(this));
+		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
 
 		// Check if vault is loaded (required for economy)
 		if (setupEconomy()) {
@@ -81,60 +80,6 @@ public final class BirthdayGift extends JavaPlugin {
 		Log(pdfFile.getName() + " has been disabled!");
 	}
 	
-	/*
-	 * Handle plugin commands
-	 */
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-		if (cmd.getName().equalsIgnoreCase("birthday")) {
-			if (!(sender instanceof Player)) {
-				sender.sendMessage("Sorry, only in game players can use this command");
-			} else {
-				Player player = (Player) sender;
-				BirthdayRecord birthday = getPlayerRecord(sender.getName());
-				if (args.length == 0) {
-					// Display player's birthday
-					if ((birthday == null) || (birthday.birthdayDate == null)) {
-						player.sendMessage(ChatColor.RED + "You have not set your birthday.");
-						player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
-					} else {
-						String mydate = new SimpleDateFormat("dd MMM yyyy").format(birthday.birthdayDate); 
-						player.sendMessage(ChatColor.YELLOW + "Your birthday is currently set to: " + ChatColor.GREEN + mydate);
-					}
-				} else {
-					// Set player's birthday	
-					Date bdate;
-					try {
-						bdate = new SimpleDateFormat("dd-MM-yyyy").parse(args[0]);
-					} catch (ParseException e) {
-						player.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: DD-MM-YYYY");
-						return true;
-					}
-					
-					if (birthday == null) {
-						// Player's birthday is not set
-						BirthdayRecord rec = new BirthdayRecord();
-						rec.birthdayDate = bdate;
-						if (IsPlayerBirthday(rec)) {
-							// Don't allow players to set the birthday to today
-							player.sendMessage(ChatColor.RED + "Sorry, you cannot set your birthday to today.");
-							return true;
-						} else {
-							// Set player's birthday
-							SetPlayerBirthday(player.getName(), bdate);
-							String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate); 
-							player.sendMessage(ChatColor.YELLOW + "Your birthday is now set to: " + ChatColor.GREEN + mydate);
-						}
-					} else {
-						// Don't allow players to change their birthday once it's set
-						player.sendMessage(ChatColor.RED + "Sorry, you cannot change your birthday");
-					}
-				}
-			}
-		}
-		return true;
-	}
-
 	/*
 	 * 
 	 */
