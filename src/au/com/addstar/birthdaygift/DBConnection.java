@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.avaje.ebean.annotation.Sql;
+
 public class DBConnection {
 	private BirthdayGift plugin;
 	public String DBFilename;
@@ -73,5 +75,20 @@ public class DBConnection {
 			e.printStackTrace();
 		}
 		return true;
+	}
+
+	/*
+	 * Clean up user provided strings to protect against SQL injection
+	 */
+	public String SQLEncode(String origtext) {
+		String newtext = origtext;
+        newtext = newtext.replaceAll("\\\\", "\\\\\\\\");
+        newtext = newtext.replaceAll("\\n","\\\\n");
+        newtext = newtext.replaceAll("\\r", "\\\\r");
+        newtext = newtext.replaceAll("\\t", "\\\\t");
+        newtext = newtext.replaceAll("\\0", "\\\\0");
+        newtext = newtext.replaceAll("'", "\\\\'");
+        newtext = newtext.replaceAll("\\\"", "\\\\\"");
+        return newtext;
 	}
 }

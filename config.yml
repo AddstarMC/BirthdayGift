@@ -1,3 +1,4 @@
+debug: false
 messages:
   login: '&e@PLAYER@ joined the game.. and it''s their &cbirthday &etoday!'
   announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto @PLAYER@ -=-=-=-'

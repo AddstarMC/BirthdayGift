@@ -1,13 +1,13 @@
 package au.com.addstar.birthdaygift;
 
+import java.util.Date;
+
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.ChatColor;
 
 import au.com.addstar.birthdaygift.BirthdayGift.*;
@@ -27,13 +27,13 @@ public class PlayerListener implements Listener {
 		final BirthdayRecord birthday = plugin.getPlayerRecord(player.getName());
 		if (plugin.IsPlayerBirthday(birthday)) {
 			event.setJoinMessage(ChatColor.YELLOW + player.getName() + " joined the game.. and it's their " + ChatColor.UNDERLINE + ChatColor.RED + "birthday" + ChatColor.RESET + ChatColor.YELLOW + " today!");
-			plugin.Log("It's " + player.getName() + "'s birthday today!");
+			plugin.Log("Today is " + player.getName() + "'s birthday!");
 			
 			plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 				@Override
 				public void run() {
 					if (!plugin.ReceivedGiftToday(birthday)) {
-						plugin.SetGiftReceived(player.getName());
+						plugin.SetGiftReceived(player.getName(), new Date());
 					
 						plugin.Log("Giving birthday gift(s) to " + player.getName());
 						server.broadcastMessage(ChatColor.AQUA + "-=-=-=- Please wish a " + ChatColor.BLUE + "Happy Birthday" + ChatColor.AQUA + " to " + player.getName() + " -=-=-=-");

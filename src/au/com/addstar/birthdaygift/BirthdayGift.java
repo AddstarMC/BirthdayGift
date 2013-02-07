@@ -18,6 +18,7 @@ import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -55,6 +56,7 @@ public final class BirthdayGift extends JavaPlugin {
 		getConfig().options().copyDefaults(true);
 		getCommand("birthday").setExecutor(new CommandBirthday(this));
 		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
+		getCommand("birthdaygift").setAliases(Arrays.asList("bgift"));
 
 		// Check if vault is loaded (required for economy)
 		if (setupEconomy()) {
@@ -103,12 +105,22 @@ public final class BirthdayGift extends JavaPlugin {
 		logger.warning("[BirthdayGift] " + data);
 	}
 	
+	public void Debug(String data) {
+		if (this.Config().getBoolean("debug")) {
+			logger.info("[BirthdayGift] DEBUG: " + data);
+		}
+	}
+	
 	public Material GetMaterial(String name) {
 		Material mat = Material.matchMaterial(name);
 		if (mat != null) {
 			return mat;
 		}
 		return null;
+	}
+	
+	public FileConfiguration Config() {
+		return getConfig();
 	}
 	
 	public boolean GiveMoney(String player, int money) {
@@ -136,13 +148,16 @@ public final class BirthdayGift extends JavaPlugin {
 		ResultSet res;
 
 		if (!dbcon.IsConnected) { return null; }
+		
+		//TODO : Sanity check player input for SQL
 				
 		BirthdayRecord rec = new BirthdayRecord();
-		query = "SELECT birthdayDate,lastGiftDate FROM birthdaygift WHERE player='" + player + "'";
+		query = "SELECT birthdayDate,lastGiftDate FROM birthdaygift WHERE player='" + player.toLowerCase() + "'";
 		try {
 			st = dbcon.Conn.createStatement();
 			res = st.executeQuery(query);
 			if (!res.next()) {
+				Debug("No birthday set for " + player);
 				return null;
 			}
 		} catch (SQLException e1) {
@@ -171,6 +186,7 @@ public final class BirthdayGift extends JavaPlugin {
 			e.printStackTrace();
 			return null;
 		}
+		Debug("Retrieved DB record for " + player + ": " + rec.birthdayDate);
 		return rec;
 	}
 	
@@ -203,7 +219,7 @@ public final class BirthdayGift extends JavaPlugin {
 		if (birthday != null) {
 			if (birthday.lastGiftDate == null) {
 				// Player has never received birthday gifts
-				Log("Never received a gift");
+				Debug("Never received a gift");
 				return false;
 			}
 
@@ -221,10 +237,10 @@ public final class BirthdayGift extends JavaPlugin {
 
 			// Check if player has received a gift today
 			if (birthday.lastGiftDate.equals(today)) {
-				Log("Already receieved a gift today");
+				Debug("Already receieved a gift today");
 				return true;
 			} else {
-				Log("Hasn't received a gift today");
+				Debug("Hasn't received a gift today");
 				return false;
 			}
 		}
@@ -234,9 +250,12 @@ public final class BirthdayGift extends JavaPlugin {
 	/*
 	 * Set the "lastGiftDate" on the player's record
 	 */
-	public boolean SetGiftReceived(String player) {
-		String datestr = new SimpleDateFormat("yyyy-MM-dd").format(new Date()); 
-		String query = "UPDATE birthdaygift SET lastGiftDate='" + datestr + "' WHERE player='" + player + "'";
+	public boolean SetGiftReceived(String player, Date newdate) {
+		String datestr = "";
+		if (newdate != null) {
+			datestr = new SimpleDateFormat("yyyy-MM-dd").format(newdate);
+		}
+		String query = "UPDATE birthdaygift SET lastGiftDate='" + datestr + "' WHERE player='" + player.toLowerCase() + "'";
 		dbcon.ExecuteUpdate(query);
 		return true;
 	}
@@ -252,10 +271,20 @@ public final class BirthdayGift extends JavaPlugin {
 
 		String query;
 		if (birthday == null) {
-			query = "INSERT INTO birthdaygift (player, birthdayDate, lastGiftDate) VALUES ('" + player + "', '" + datestr + "', '')";
+			query = "INSERT INTO birthdaygift (player, birthdayDate, lastGiftDate) VALUES ('" + player.toLowerCase() + "', '" + datestr + "', '')";
 		} else {
-			query = "UPDATE birthdaygift SET birthdayDate='" + datestr + "'";
+			query = "UPDATE birthdaygift SET birthdayDate='" + datestr + "' WHERE player='" + player.toLowerCase() + "'";
 		}
+		dbcon.ExecuteUpdate(query);
+		return true;
+	}
+	
+	/*
+	 * Delete the birthday record of the given user
+	 */
+	public boolean DeletePlayerBirthday(String player) {
+		dbcon.
+		String query = "DELETE FROM birthdaygift WHERE player='" + player.toLowerCase() + "'";
 		dbcon.ExecuteUpdate(query);
 		return true;
 	}

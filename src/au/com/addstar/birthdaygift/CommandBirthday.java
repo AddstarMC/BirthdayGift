@@ -19,6 +19,9 @@ public class CommandBirthday implements CommandExecutor {
 		this.plugin = plugin;
 	}
 	
+	/*
+	 * Handle the /birthday command
+	 */
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("birthday")) {
 			if (!(sender instanceof Player)) {
@@ -29,7 +32,7 @@ public class CommandBirthday implements CommandExecutor {
 				if (args.length == 0) {
 					// Display player's birthday
 					if ((birthday == null) || (birthday.birthdayDate == null)) {
-						player.sendMessage(ChatColor.RED + "You have not set your birthday.");
+						player.sendMessage(ChatColor.RED + "You have not set your birthday yet.");
 						player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
 					} else {
 						String mydate = new SimpleDateFormat("dd MMM yyyy").format(birthday.birthdayDate); 

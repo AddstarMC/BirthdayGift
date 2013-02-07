@@ -1,10 +1,12 @@
 name: BirthdayGift
 main: au.com.addstar.birthdaygift.BirthdayGift
-version: 0.0.1
+version: 0.0.3
+author: add5tar
 description: Allow users to set their birthday and receive gifts on their birthday
 
 commands:
   birthday:
-    description: Set your birthday (to receive birthday gifts)
+    description: Set or view your birthday (to receive birthday gifts)
   bgift:
-    description: BirthdayGift admin command
+    aliases: birthdaygift
+    description: Additional BirthdayGift commands
