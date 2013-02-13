@@ -255,8 +255,8 @@ public final class BirthdayGift extends JavaPlugin {
 		if (newdate != null) {
 			datestr = new SimpleDateFormat("yyyy-MM-dd").format(newdate);
 		}
-		String query = "UPDATE birthdaygift SET lastGiftDate='" + datestr + "' WHERE player='" + player.toLowerCase() + "'";
-		dbcon.ExecuteUpdate(query);
+		String query = "UPDATE birthdaygift SET lastGiftDate=? WHERE player=?";
+		dbcon.PreparedUpdate(query, new String[]{datestr, player.toLowerCase()});
 		return true;
 	}
 
@@ -271,11 +271,11 @@ public final class BirthdayGift extends JavaPlugin {
 
 		String query;
 		if (birthday == null) {
-			query = "INSERT INTO birthdaygift (player, birthdayDate, lastGiftDate) VALUES ('" + player.toLowerCase() + "', '" + datestr + "', '')";
+			query = "INSERT INTO birthdaygift (birthdayDate, player, lastGiftDate) VALUES (?, ?, '')";
 		} else {
-			query = "UPDATE birthdaygift SET birthdayDate='" + datestr + "' WHERE player='" + player.toLowerCase() + "'";
+			query = "UPDATE birthdaygift SET birthdayDate=? WHERE player=?";
 		}
-		dbcon.ExecuteUpdate(query);
+		dbcon.PreparedUpdate(query, new String[]{datestr, player.toLowerCase()});
 		return true;
 	}
 	
@@ -283,9 +283,8 @@ public final class BirthdayGift extends JavaPlugin {
 	 * Delete the birthday record of the given user
 	 */
 	public boolean DeletePlayerBirthday(String player) {
-		dbcon.
-		String query = "DELETE FROM birthdaygift WHERE player='" + player.toLowerCase() + "'";
-		dbcon.ExecuteUpdate(query);
+		String query = "DELETE FROM birthdaygift WHERE player=?";
+		dbcon.PreparedUpdate(query, new String[]{player.toLowerCase()});
 		return true;
 	}
 }

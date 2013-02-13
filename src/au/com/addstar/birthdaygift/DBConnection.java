@@ -2,6 +2,7 @@ package au.com.addstar.birthdaygift;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -35,16 +36,34 @@ public class DBConnection {
 	
 	public ResultSet ExecuteQuery(String query) {
 		Statement st;
-		ResultSet res;
 		
 		if (!IsConnected) { return null; }
 		
 		try {
 			st = Conn.createStatement();
-			res = st.executeQuery(query);
-			return res;
+			return st.executeQuery(query);
 		} catch (SQLException e) {
 			plugin.Warn("Query execution failed!");
+			plugin.Log("SQL: " + query);
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public ResultSet PreparedQuery(String query, String[] params) {
+		PreparedStatement ps;
+		
+		if (!IsConnected) { return null; }
+		
+		try {
+			ps = Conn.prepareStatement(query);
+			// Construct PreparedStatement by adding all supplied params to the query
+			for (int x=0; x < params.length; x++) {
+				ps.setString(x, params[x]);
+			}
+			return ps.executeQuery();
+		} catch (SQLException e) {
+			plugin.Warn("Prepared query execution failed!");
 			plugin.Log("SQL: " + query);
 			e.printStackTrace();
 			return null;
@@ -54,7 +73,7 @@ public class DBConnection {
 	public int ExecuteUpdate(String query) {
 		Statement st;
 		
-		if (!IsConnected) { return 0; }
+		if (!IsConnected) { return -1; }
 		
 		try {
 			st = Conn.createStatement();
@@ -63,7 +82,27 @@ public class DBConnection {
 			plugin.Warn("Query execution failed!");
 			plugin.Log("SQL: " + query);
 			e.printStackTrace();
-			return 0;
+			return -1;
+		}
+	}
+	
+	public int PreparedUpdate(String query, String[] params) {
+		PreparedStatement ps;
+		
+		if (!IsConnected) { return -1; }
+		
+		try {
+			ps = Conn.prepareStatement(query);
+			// Construct PreparedStatement by adding all supplied params to the query
+			for (int x=0; x < params.length; x++) {
+				ps.setString(x, params[x]);
+			}
+			return ps.executeUpdate();
+		} catch (SQLException e) {
+			plugin.Warn("Prepared query execution failed!");
+			plugin.Log("SQL: " + query);
+			e.printStackTrace();
+			return -1;
 		}
 	}
 	
