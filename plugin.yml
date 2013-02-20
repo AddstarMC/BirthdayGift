@@ -1,8 +1,11 @@
 name: BirthdayGift
 main: au.com.addstar.birthdaygift.BirthdayGift
-version: 0.0.3
+version: 1.0.0
 author: add5tar
-description: Allow users to set their birthday and receive gifts on their birthday
+load-after: Vault
+website: http://dev.bukkit.org/server-mods/birthdaygift/
+dev-url: http://dev.bukkit.org/server-mods/birthdaygift/
+description: Reward players on their birthday and notify everyone of the player's birthday
 
 commands:
   birthday:
@@ -10,3 +13,33 @@ commands:
   bgift:
     aliases: birthdaygift
     description: Additional BirthdayGift commands
+    
+permissions:
+  birthdaygift.*:
+    description: Full access to all commands (admin)
+    children:
+      birthdaygift.use: true
+      birthdaygift.info: true
+      birthdaygift.stats: true
+      birthdaygift.set: true
+      birthdaygift.reset: true
+      birthdaygift.delete: true
+  birthdaygift.use:
+    description: Allow use of the /birthday command
+    default: true
+  birthdaygift.info:
+    description: Allow access to the /bgift info command
+    default: op 
+  birthdaygift.stats:
+    description: Allow access to the /bgift stats command
+    default: op 
+  birthdaygift.set:
+    description: Allow access to the /bgift set command
+    default: op 
+  birthdaygift.reset:
+    description: Allow access to the /bgift reset command
+    default: op 
+  birthdaygift.delete:
+    description: Allow access to the /bgift delete command
+    default: op 
+      

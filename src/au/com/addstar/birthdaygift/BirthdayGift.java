@@ -1,11 +1,24 @@
-/**
- * 
- */
 package au.com.addstar.birthdaygift;
+/*
+* BirthdayGift
+* Copyright (C) 2013 add5tar <copyright at addstar dot com dot au>
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.logging.*;
 import java.text.ParseException;
@@ -17,6 +30,7 @@ import net.milkbowl.vault.economy.EconomyResponse;
 import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
 import net.milkbowl.vault.permission.Permission;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -32,12 +46,19 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  */
 public final class BirthdayGift extends JavaPlugin {
-	private static final Logger logger = Logger.getLogger("BirthdayGift");
 	public BirthdayGift plugin;
-	public DBConnection dbcon = null;
+	public Database dbcon = null;
 	public static Economy econ = null;
 	public static Permission perms = null;
 	public static Chat chat = null;
+	public boolean VaultEnabled = false;
+	public boolean DebugEnabled = false;
+	public String JoinMessage = "";
+	public String AnnounceMessage = "";
+	public String GiftMessage = "";
+	private static final Logger logger = Logger.getLogger("BirthdayGift");
+	public ConfigManager cfg = new ConfigManager(this);
+	public List<ItemStack> RewardItems = new ArrayList<ItemStack>();
     
 	static class BirthdayRecord {
 		String playerName = "";
@@ -52,25 +73,27 @@ public final class BirthdayGift extends JavaPlugin {
 		PluginManager pm = this.getServer().getPluginManager();
 		pm.registerEvents(new PlayerListener(this), this);
 
+		// Check if vault is loaded (required for economy)
+		VaultEnabled = setupEconomy();
+		if (VaultEnabled) {
+			Log("Found Vault! Hooking for economy!");
+		} else {
+			Log("Vault was not detected! Economy rewards are not available.");
+		}
+		
 		// Read (or initialise) plugin config file
-		getConfig().options().copyDefaults(true);
+		cfg.LoadConfig(getConfig());
+
+		// Save the default config (if one doesn't exist)
+		saveDefaultConfig();
+
 		getCommand("birthday").setExecutor(new CommandBirthday(this));
 		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
 		getCommand("birthdaygift").setAliases(Arrays.asList("bgift"));
 
-		// Check if vault is loaded (required for economy)
-		if (setupEconomy()) {
-			Log("Found Vault! Hooking for economy!");
-		}
-		
-		//CheckConfig();
-		
 		// Open/initialise the database
-		dbcon = new DBConnection(this, "birthday.db");
+		dbcon = new Database(this, "birthday.db");
 		Log(pdfFile.getName() + " " + pdfFile.getVersion() + " has been enabled");
-
-		// Store any "corrections" to the config in memory
-		saveConfig();
 	}
 	
 	@Override
@@ -83,7 +106,7 @@ public final class BirthdayGift extends JavaPlugin {
 	}
 	
 	/*
-	 * 
+	 * Detect/configure Vault
 	 */
 	private boolean setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {
@@ -106,9 +129,13 @@ public final class BirthdayGift extends JavaPlugin {
 	}
 	
 	public void Debug(String data) {
-		if (this.Config().getBoolean("debug")) {
+		if (DebugEnabled) {
 			logger.info("[BirthdayGift] DEBUG: " + data);
 		}
+	}
+
+	public FileConfiguration Config() {
+		return getConfig();
 	}
 	
 	public Material GetMaterial(String name) {
@@ -119,52 +146,62 @@ public final class BirthdayGift extends JavaPlugin {
 		return null;
 	}
 	
-	public FileConfiguration Config() {
-		return getConfig();
-	}
-	
 	public boolean GiveMoney(String player, int money) {
-		EconomyResponse resp = econ.depositPlayer(player, money);
-		if (resp.type == ResponseType.SUCCESS) {
-			Log(player + " has been given $" + resp.amount);
-			Log("New player balance: " + resp.balance);
-			return true;
-		} else {
-			Warn("Vault payment failed! Error: " + resp.errorMessage);
-			return false;
+		if (VaultEnabled) {
+			EconomyResponse resp = econ.depositPlayer(player, money);
+			if (resp.type == ResponseType.SUCCESS) {
+				Log(player + " has been given $" + resp.amount + " (new balance $" + resp.balance + ")");
+				return true;
+			} else {
+				Warn("Vault payment failed! Error: " + resp.errorMessage);
+			}
 		}
+		return false;
 	}
 	
-	public boolean GiveItem(Player player, Material item, int amount) {
+	public boolean GiveItemStack(Player player, ItemStack itemstack) {
 		PlayerInventory inventory = player.getInventory();
-		ItemStack itemstack = new ItemStack(item, amount);
-		inventory.addItem(itemstack);
+		HashMap result = inventory.addItem(itemstack);
+		//TODO: Check "result" to ensure all items were given
 		return true;
+	}
+
+	public ItemStack CreateStack(Material item, int datavalue, int amount) {
+		ItemStack itemstack = new ItemStack(item, amount, (short)datavalue);
+		return itemstack;
 	}
 
 	public BirthdayRecord getPlayerRecord(String player) {
 		String query;
-		Statement st;
 		ResultSet res;
 
 		if (!dbcon.IsConnected) { return null; }
 		
-		//TODO : Sanity check player input for SQL
-				
+		if ((player == null) || (player == "")) {
+			Debug("getPlayerRecord() was called with empty player!");
+			return null;
+		}
+		
 		BirthdayRecord rec = new BirthdayRecord();
-		query = "SELECT birthdayDate,lastGiftDate FROM birthdaygift WHERE player='" + player.toLowerCase() + "'";
+		query = "SELECT birthdayDate,lastGiftDate FROM birthdaygift WHERE player=?";
+		res = dbcon.PreparedQuery(query, new String[]{player.toLowerCase()});
+		if (res == null) {
+			// Query failed! This should not happen, just return because the error is already logged by PreparedQuery()
+			return null;
+		}
+		
+		// No results
 		try {
-			st = dbcon.Conn.createStatement();
-			res = st.executeQuery(query);
 			if (!res.next()) {
-				Debug("No birthday set for " + player);
-				return null;
+					Debug("No birthday set for " + player);
+					return null;
 			}
 		} catch (SQLException e1) {
 			e1.printStackTrace();
 			return null;
 		}
 
+		// 
 		rec.playerName = player;
 		try {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -285,6 +322,31 @@ public final class BirthdayGift extends JavaPlugin {
 	public boolean DeletePlayerBirthday(String player) {
 		String query = "DELETE FROM birthdaygift WHERE player=?";
 		dbcon.PreparedUpdate(query, new String[]{player.toLowerCase()});
+		return true;
+	}
+	
+	/*
+	 * Check if the player has the specified permission
+	 */
+	public boolean HasPermission(Player player, String perm) {
+		if (player instanceof Player) {
+			if (!player.hasPermission(perm)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/*
+	 * Check required permission and send error response to player if not allowed
+	 */
+	public boolean RequirePermission(Player player, String perm) {
+		if (!HasPermission(player, perm)) {
+			if (player instanceof Player) {
+				player.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
+				return false;
+			}
+		}
 		return true;
 	}
 }

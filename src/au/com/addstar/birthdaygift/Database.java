@@ -1,4 +1,21 @@
 package au.com.addstar.birthdaygift;
+/*
+* BirthdayGift
+* Copyright (C) 2013 add5tar <copyright at addstar dot com dot au>
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,15 +24,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.avaje.ebean.annotation.Sql;
-
-public class DBConnection {
+public class Database {
 	private BirthdayGift plugin;
 	public String DBFilename;
 	public Connection Conn;
 	public boolean IsConnected = false;
 	
-	public DBConnection(BirthdayGift instance, String filename) {
+	public Database(BirthdayGift instance, String filename) {
 		plugin = instance;
 		DBFilename = filename;
 		OpenDatabase();
@@ -58,8 +73,10 @@ public class DBConnection {
 		try {
 			ps = Conn.prepareStatement(query);
 			// Construct PreparedStatement by adding all supplied params to the query
+			plugin.Debug("SQL Query: " + query);
 			for (int x=0; x < params.length; x++) {
-				ps.setString(x, params[x]);
+				plugin.Debug("Param " + (x+1) + ": "+ params[x]);
+				ps.setString(x+1, params[x]);
 			}
 			return ps.executeQuery();
 		} catch (SQLException e) {
@@ -94,8 +111,10 @@ public class DBConnection {
 		try {
 			ps = Conn.prepareStatement(query);
 			// Construct PreparedStatement by adding all supplied params to the query
+			plugin.Debug("SQL Update: " + query);
 			for (int x=0; x < params.length; x++) {
-				ps.setString(x, params[x]);
+				plugin.Debug("Param " + (x+1) + ": "+ params[x]);
+				ps.setString(x+1, params[x]);
 			}
 			return ps.executeUpdate();
 		} catch (SQLException e) {

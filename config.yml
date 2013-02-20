@@ -1,13 +1,35 @@
+# Enable plugin debugging (warning: this is very verbose!)
 debug: false
+
+# Define the messages used for birthday events
+# Leave any message empty ('') to disable it
+#   announcement: The broadcast message used when the player joins
+#   gift: The message to send to the player when they receive their gift    
+#   join: The player's login message will be changed to this message on their birthday
 messages:
-  login: '&e@PLAYER@ joined the game.. and it''s their &cbirthday &etoday!'
-  announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto @PLAYER@ -=-=-=-'
+  join: '&e<PLAYER> joined the game.. and it''s their &cbirthday &etoday!'
+  announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto <PLAYER> -=-=-=-'
   gift: '&dWe hope you like your birthday gifts (and money)!!'
+
+# How much money to award the player on their birthday
+# Set to 0 to disable 
 money: 1000
+
+# Which items to give to the player on their birthday
+# Leave list empty to disable
+# Format is: <ITEM>[,AMOUNT]
+# (NOTE: ITEM can be ITEM ID or ITEM NAME, and can also include a data value)
+#
+# Examples:
+#   - CAKE
+#   - 357,2
+#   - GOLDEN_APPLE:1,1
+#   - DIAMONDSWORD,1
+#   - DIAMOND,5
 items:
-  - CAKE,1
-  - cookie,5
-  - blah,1
-  - diamond,5
-  - emerald,5
-  - beacon,1
+  - CAKE
+  - GOLDEN_APPLE:1,1
+  - COOKIE,2
+  - DIAMOND,5
+  - EMERALD,5
+  - BEACON,1

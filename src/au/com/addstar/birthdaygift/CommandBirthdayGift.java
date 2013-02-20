@@ -1,4 +1,21 @@
 package au.com.addstar.birthdaygift;
+/*
+* BirthdayGift
+* Copyright (C) 2013 add5tar <copyright at addstar dot com dot au>
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,14 +39,6 @@ public class CommandBirthdayGift implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("bgift")) {
 			// Check if player can do this (console always can)
-			if (sender instanceof Player) {
-				//Player player = (Player) sender;
-				if ((!sender.isOp()) && (!sender.hasPermission("birthdaygift.admin"))) {
-					sender.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
-					return false;
-				}
-			}
-
 			String action = "";
 			if (args.length > 0) {
 				action = args[0].toUpperCase();
@@ -41,6 +50,8 @@ public class CommandBirthdayGift implements CommandExecutor {
 				/*
 				 * Show the birthday record for the given player
 				 */
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.info")) { return false; }
+				
 				if (args.length < 2) {
 					// Not enough parameters
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift info <player>");
@@ -66,12 +77,16 @@ public class CommandBirthdayGift implements CommandExecutor {
 				}
 				break;
 			case "STATS":
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.stats")) { return false; }
+
 				sender.sendMessage(ChatColor.RED + "Feature not implemented yet.");
 				break;
 			case "SET":
 				/*
 				 * Set the player's birthdate (overrides any existing record and CAN be set to today)
 				 */
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.set")) { return false; }
+
 				if (args.length < 3) {
 					// Not enough parameters
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift set <player> <DD-MM-YYYY>");
@@ -99,6 +114,8 @@ public class CommandBirthdayGift implements CommandExecutor {
 				/*
 				 * Reset the player's "Last gift received date"
 				 */
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.reset")) { return false; }
+
 				if (args.length < 2) {
 					// Not enough parameters
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift reset <player>");
@@ -118,6 +135,8 @@ public class CommandBirthdayGift implements CommandExecutor {
 				/*
 				 * Completely delete the player's birthday record
 				 */
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.delete")) { return false; }
+
 				if (args.length < 2) {
 					// Not enough parameters
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift delete <player>");
@@ -133,24 +152,21 @@ public class CommandBirthdayGift implements CommandExecutor {
 					}
 				}
 				break;
-			case "REGIFT":
-				sender.sendMessage(ChatColor.RED + "Feature not implemented yet.");
-				break;
-			case "REPAY":
-				sender.sendMessage(ChatColor.RED + "Feature not implemented yet.");
-				break;
 			default:
 				/*
 				 * Usage information for the command
 				 */
 				sender.sendMessage(ChatColor.GREEN + "Available BirthdayGift commands:");
-				sender.sendMessage(ChatColor.AQUA + "/bgift info <player> : " + ChatColor.WHITE + "Player's birthday info");
-				sender.sendMessage(ChatColor.AQUA + "/bgift stats : " + ChatColor.WHITE + "Birthday stats");
-				sender.sendMessage(ChatColor.AQUA + "/bgift set <player> <DD-MM-YYYY> : " + ChatColor.WHITE + "Set player's birthday");
-				sender.sendMessage(ChatColor.AQUA + "/bgift reset <player> : " + ChatColor.WHITE + "Reset 'gift received' flag");
-				sender.sendMessage(ChatColor.AQUA + "/bgift delete <player> : " + ChatColor.WHITE + "Delete birthday record");
-				sender.sendMessage(ChatColor.AQUA + "/bgift regift <player> : " + ChatColor.WHITE + "Re-issue birthday gift(s) only");
-				sender.sendMessage(ChatColor.AQUA + "/bgift repay <player> : " + ChatColor.WHITE + "Re-issue birthday money only");
+				if (plugin.HasPermission((Player) sender, "birthdaygift.info"))
+					sender.sendMessage(ChatColor.AQUA + "/bgift info <player> : " + ChatColor.WHITE + "Player's birthday info");
+				if (plugin.HasPermission((Player) sender, "birthdaygift.stats"))
+					sender.sendMessage(ChatColor.AQUA + "/bgift stats : " + ChatColor.WHITE + "Birthday stats");
+				if (plugin.HasPermission((Player) sender, "birthdaygift.set"))
+					sender.sendMessage(ChatColor.AQUA + "/bgift set <player> <DD-MM-YYYY> : " + ChatColor.WHITE + "Set player's birthday");
+				if (plugin.HasPermission((Player) sender, "birthdaygift.reset"))
+					sender.sendMessage(ChatColor.AQUA + "/bgift reset <player> : " + ChatColor.WHITE + "Reset 'gift received' flag");
+				if (plugin.HasPermission((Player) sender, "birthdaygift.delete"))
+					sender.sendMessage(ChatColor.AQUA + "/bgift delete <player> : " + ChatColor.WHITE + "Delete birthday record");
 			}
 		}
 		return true;
