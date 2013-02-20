@@ -330,11 +330,15 @@ public final class BirthdayGift extends JavaPlugin {
 	 */
 	public boolean HasPermission(Player player, String perm) {
 		if (player instanceof Player) {
-			if (!player.hasPermission(perm)) {
-				return false;
+			// Real player
+			if (player.hasPermission("birthdaygift.*") && player.hasPermission(perm)) {		// Temporary hack to make wildcard permissions work
+				return true;
 			}
+		} else {
+			// Console
+			return true;
 		}
-		return true;
+		return false;
 	}
 	
 	/*
