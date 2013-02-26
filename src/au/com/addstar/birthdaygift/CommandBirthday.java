@@ -44,6 +44,8 @@ public class CommandBirthday implements CommandExecutor {
 			if (!(sender instanceof Player)) {
 				sender.sendMessage("Sorry, only in game players can use this command");
 			} else {
+				if (!plugin.RequirePermission((Player) sender, "birthdaygift.use")) { return false; }
+
 				Player player = (Player) sender;
 				BirthdayRecord birthday = plugin.getPlayerRecord(sender.getName());
 				if (args.length == 0) {

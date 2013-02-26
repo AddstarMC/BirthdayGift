@@ -40,6 +40,8 @@ public class ConfigManager {
 		plugin.JoinMessage = Config().getString("messages.join");
 		plugin.AnnounceMessage = Config().getString("messages.announcement");
 		plugin.GiftMessage = Config().getString("messages.gift");
+		plugin.ClaimMessage = Config().getString("messages.claim");
+		plugin.MoneyMessage = Config().getString("messages.money");
 
 		// Validate reward items
 		List<?> items = config.getList("items");

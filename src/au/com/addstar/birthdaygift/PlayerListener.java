@@ -40,6 +40,9 @@ public class PlayerListener implements Listener {
 		final Player player = event.getPlayer();
 		final Server server = player.getServer();
 		
+		// Ignore anyone without the "use" permission
+		if (!plugin.HasPermission(player, "birthdaygift.use")) { return; }
+		
 		final BirthdayRecord birthday = plugin.getPlayerRecord(player.getName());
 		if (plugin.IsPlayerBirthday(birthday)) {
 			plugin.Log("Today is " + player.getName() + "'s birthday!");
@@ -55,34 +58,22 @@ public class PlayerListener implements Listener {
 			plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 				@Override
 				public void run() {
+					// Broadcast birthday message (if set, and hasn't already happened today)
 					if (!plugin.ReceivedGiftToday(birthday)) {
-						plugin.SetGiftReceived(player.getName(), new Date());
-					
-						// Broadcast birthday message (if set)
-						plugin.Log("Giving birthday gift(s) to " + player.getName());
-						if (plugin.JoinMessage != "") {
-							String msg = plugin.AnnounceMessage.replaceAll("<PLAYER>", player.getName());
-							msg = ChatColor.translateAlternateColorCodes('&', msg);
-							server.broadcastMessage(msg);
+						// Broadcast the announcement
+						if (plugin.AnnounceMessage != "") {
+							if (!plugin.AnnouncedToday(birthday)) {
+								plugin.SetAnnounced(player.getName(), new Date());
+								String msg = plugin.AnnounceMessage.replaceAll("<PLAYER>", player.getName());
+								msg = ChatColor.translateAlternateColorCodes('&', msg);
+								server.broadcastMessage(msg);
+							}
 						}
-						
-						// Set special join message (if set)
-						if (plugin.JoinMessage != "") {
-							String msg = plugin.GiftMessage.replaceAll("<PLAYER>", player.getName());
-							msg = ChatColor.translateAlternateColorCodes('&', msg);
-							player.sendMessage(msg);
-						}
-	
-						// Reward player with money (if applicable)
-						if (plugin.Config().isSet("money") && plugin.Config().isInt("money")) {
-							plugin.GiveMoney(player.getName(), plugin.Config().getInt("money"));
-						}
-						
-						// Reward player with items (if applicable)
-						for (int i = 0; i < plugin.RewardItems.size(); i++) {
-							plugin.Debug("RewardItems["+i+"] => " + plugin.RewardItems.get(i).getType().name() + ":" + plugin.RewardItems.get(i).getData().getData());
-							plugin.GiveItemStack(player, plugin.RewardItems.get(i));
-						}
+
+						// Remind player about how to claim
+						String msg = plugin.ClaimMessage.replaceAll("<PLAYER>", player.getName());
+						msg = ChatColor.translateAlternateColorCodes('&', msg);
+						player.sendMessage(msg);
 					}
 				}
 			}, 20L);

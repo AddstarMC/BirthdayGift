@@ -9,7 +9,9 @@ debug: false
 messages:
   join: '&e<PLAYER> joined the game.. and it''s their &cbirthday &etoday!'
   announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto <PLAYER> -=-=-=-'
-  gift: '&dWe hope you like your birthday gifts (and money)!!'
+  claim: '&dYou have received birthday gift(s)! Type &b/bgift claim'
+  gift: '&aWe hope you like your special birthday gifts!'
+  money: '&aYou have been given &e$<MONEY>'
 
 # How much money to award the player on their birthday
 # Set to 0 to disable 

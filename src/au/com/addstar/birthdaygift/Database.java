@@ -17,12 +17,17 @@ package au.com.addstar.birthdaygift;
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
+import java.io.IOException;
+import java.nio.file.*;
+import static java.nio.file.StandardCopyOption.*;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 
 public class Database {
 	private BirthdayGift plugin;
@@ -36,17 +41,52 @@ public class Database {
 		OpenDatabase();
 	}
 
-	public Connection OpenDatabase() {
+	public boolean OpenDatabase() {
 		try {
 			Conn = DriverManager.getConnection("jdbc:sqlite:plugins/" + plugin.getName() + "/" + DBFilename);
 			IsConnected = true;
-			ExecuteUpdate("CREATE TABLE IF NOT EXISTS birthdaygift (`player` varchar(250) NOT NULL PRIMARY KEY, `birthdayDate` DATE, `lastGiftDate` DATE)");
-			return Conn;
+			
+			if (TableExists(Conn, "birthdaygift")) {
+				// Check/update existing table
+				if (!ColumnExists(Conn, "birthdaygift", "lastAnnouncedDate")) {
+					plugin.Warn("Old table format detected!");
+					
+					// Backup existing database
+					plugin.Log("Creating backup of existing database...");
+					Path src = Paths.get("plugins/" + plugin.getName() + "/" + DBFilename);
+					Path dst = Paths.get("plugins/" + plugin.getName() + "/backup.db");
+					
+					try {
+						Files.copy(src, dst, new CopyOption[] { REPLACE_EXISTING });
+					} catch (IOException e) {
+						plugin.Warn("Unable to create database backup! Refusing to continue!!");
+						Conn.close();
+						IsConnected = false;
+						e.printStackTrace();
+						return false;
+					}
+					
+					// Make changes to database
+					plugin.Log("Updating database table...");
+					int result = ExecuteUpdate("ALTER TABLE birthdaygift ADD COLUMN `lastAnnouncedDate` DATE");
+					plugin.Debug("SQL Result: " + result);
+				}
+			} else {
+				// Create new table schema
+				plugin.Log("Database table does not exist, creating one.");
+				ExecuteUpdate("CREATE TABLE IF NOT EXISTS birthdaygift (" +
+						"`player` varchar(250) NOT NULL PRIMARY KEY, " +
+						"`birthdayDate` DATE," +
+						"`lastGiftDate` DATE," +
+						"`lastAnnouncedDate` DATE)");
+			}
+			IsConnected = true;
+			return false;
 		} catch (SQLException e) {
 			plugin.Warn("Unable to open database!");
 			e.printStackTrace();
 		}
-		return null;
+		return false;
 	}
 	
 	public ResultSet ExecuteQuery(String query) {
@@ -56,6 +96,7 @@ public class Database {
 		
 		try {
 			st = Conn.createStatement();
+			plugin.Debug("SQL Query: " + query);
 			return st.executeQuery(query);
 		} catch (SQLException e) {
 			plugin.Warn("Query execution failed!");
@@ -94,6 +135,7 @@ public class Database {
 		
 		try {
 			st = Conn.createStatement();
+			plugin.Debug("SQL Update: " + query);
 			return st.executeUpdate(query);
 		} catch (SQLException e) {
 			plugin.Warn("Query execution failed!");
@@ -134,19 +176,76 @@ public class Database {
 		}
 		return true;
 	}
+	
+	public boolean TableExists(Connection conn, String tname) {
+		DatabaseMetaData md;
+		ResultSet rs;
+		
+		try {
+			md = conn.getMetaData();
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to read DatabaseMetaData from DB connection!");
+			e.printStackTrace();
+			return false;
+		}
 
-	/*
-	 * Clean up user provided strings to protect against SQL injection
-	 */
-	public String SQLEncode(String origtext) {
-		String newtext = origtext;
-        newtext = newtext.replaceAll("\\\\", "\\\\\\\\");
-        newtext = newtext.replaceAll("\\n","\\\\n");
-        newtext = newtext.replaceAll("\\r", "\\\\r");
-        newtext = newtext.replaceAll("\\t", "\\\\t");
-        newtext = newtext.replaceAll("\\0", "\\\\0");
-        newtext = newtext.replaceAll("'", "\\\\'");
-        newtext = newtext.replaceAll("\\\"", "\\\\\"");
-        return newtext;
+		try {
+			plugin.Debug("Getting list of database tables");
+			rs = md.getTables(null, null, tname, null);
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to getTables from DatabaseMetaData!");
+			e.printStackTrace();
+			return false;
+		}
+		
+		try {
+			if (rs.next()) {
+				// Table exists 
+				return true;
+			}
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to iterate table resultSet!");
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public boolean ColumnExists(Connection conn, String tname, String cname) {
+		DatabaseMetaData md;
+		ResultSet rs;
+		
+		try {
+			md = conn.getMetaData();
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to read DatabaseMetaData from DB connection!");
+			e.printStackTrace();
+			return false;
+		}
+
+		try {
+			plugin.Debug("Getting list of table columns");
+			rs = md.getColumns(null, null, tname, cname);
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to getColumns from DatabaseMetaData!");
+			e.printStackTrace();
+			return false;
+		}
+		
+		try {
+			if (rs.next()) {
+				// Table exists 
+				return true;
+			}
+		} catch (SQLException e) {
+			// This shouldn't really happen
+			plugin.Warn("Unable to iterate column resultSet!");
+			e.printStackTrace();
+		}
+		return false;
 	}
 }

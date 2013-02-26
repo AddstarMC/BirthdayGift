@@ -56,21 +56,26 @@ public final class BirthdayGift extends JavaPlugin {
 	public String JoinMessage = "";
 	public String AnnounceMessage = "";
 	public String GiftMessage = "";
+	public String ClaimMessage = "";
+	public String MoneyMessage = "";
 	private static final Logger logger = Logger.getLogger("BirthdayGift");
 	public ConfigManager cfg = new ConfigManager(this);
 	public List<ItemStack> RewardItems = new ArrayList<ItemStack>();
-    
+	public PluginDescriptionFile pdfFile = null;
+	public PluginManager pm = null;
+	
 	static class BirthdayRecord {
 		String playerName = "";
 		Date birthdayDate = null;
 		Date lastGiftDate = null;
+		Date lastAnnouncedDate = null;
 	}
 		
 	@Override
 	public void onEnable(){
 		// Register necessary events
-		PluginDescriptionFile pdfFile = this.getDescription();
-		PluginManager pm = this.getServer().getPluginManager();
+		pdfFile = this.getDescription();
+		pm = this.getServer().getPluginManager();
 		pm.registerEvents(new PlayerListener(this), this);
 
 		// Check if vault is loaded (required for economy)
@@ -93,15 +98,24 @@ public final class BirthdayGift extends JavaPlugin {
 
 		// Open/initialise the database
 		dbcon = new Database(this, "birthday.db");
-		Log(pdfFile.getName() + " " + pdfFile.getVersion() + " has been enabled");
+		if (dbcon.IsConnected) {
+			Log(pdfFile.getName() + " " + pdfFile.getVersion() + " has been enabled");
+		} else {
+			Log(pdfFile.getName() + " " + pdfFile.getVersion() + " could not be enabled!");
+			this.setEnabled(false);
+			return;
+		}
 	}
 	
 	@Override
 	public void onDisable(){
-		PluginDescriptionFile pdfFile = this.getDescription();
-		if (dbcon != null) {
+		if ((dbcon != null) && (dbcon.IsConnected)) {
 			dbcon.CloseDatabase();
 		}
+
+		// cancel all tasks we created
+        getServer().getScheduler().cancelTasks(this);
+		
 		Log(pdfFile.getName() + " has been disabled!");
 	}
 	
@@ -183,7 +197,7 @@ public final class BirthdayGift extends JavaPlugin {
 		}
 		
 		BirthdayRecord rec = new BirthdayRecord();
-		query = "SELECT birthdayDate,lastGiftDate FROM birthdaygift WHERE player=?";
+		query = "SELECT birthdayDate,lastGiftDate,lastAnnouncedDate FROM birthdaygift WHERE player=?";
 		res = dbcon.PreparedQuery(query, new String[]{player.toLowerCase()});
 		if (res == null) {
 			// Query failed! This should not happen, just return because the error is already logged by PreparedQuery()
@@ -201,22 +215,32 @@ public final class BirthdayGift extends JavaPlugin {
 			return null;
 		}
 
-		// 
 		rec.playerName = player;
+
+		// Get last  
 		try {
+			String data;
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-			// Get the user's birthday
-			if (res.getString("birthdayDate").isEmpty()) {
+			// Get the player's birthday
+			data = res.getString("birthdayDate");
+			if ((data != null) && (!data.isEmpty())) {
+				rec.birthdayDate = sdf.parse(data);
+			} else {
 				Warn("BirthdayDate is empty for player \"" + player + "\"!");
 				return null;
-			} else {
-				rec.birthdayDate = sdf.parse(res.getString("birthdayDate"));
 			}
 
-			// Get the last date of the  
-			if (!res.getString("lastGiftDate").isEmpty()) {
-				rec.lastGiftDate = sdf.parse(res.getString("lastGiftDate"));
+			// Get the last gift received date
+			data = res.getString("lastGiftDate");
+			if ((data != null) && (!data.isEmpty())) {
+				rec.lastGiftDate = sdf.parse(data);
+			}
+
+			// Get the last announced date
+			data = res.getString("lastAnnouncedDate");
+			if ((data != null) && (!data.isEmpty())) {
+				rec.lastAnnouncedDate = sdf.parse(data);
 			}
 		} catch (ParseException | SQLException e) {
 			Warn("Date conversation error!");
@@ -298,6 +322,54 @@ public final class BirthdayGift extends JavaPlugin {
 	}
 
 	/*
+	 *  Check if the player's birthday has already been announced (broadcast)
+	 */
+	public boolean AnnouncedToday(BirthdayRecord birthday) {
+		// Is there a birthday record for this player?
+		if (birthday != null) {
+			if (birthday.lastAnnouncedDate == null) {
+				// Player has never had a birthday announced
+				Debug("Never had a birthday announcement");
+				return false;
+			}
+
+			// Get current date without time (annoying, right?)
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Date today;
+			try {
+				today = sdf.parse(sdf.format(new Date()));
+			} catch (ParseException e) {
+				// This should never happen!
+				Warn("Unable to parse current date!");
+				e.printStackTrace();
+				return false;
+			}
+
+			// Check if player has received a gift today
+			if (birthday.lastAnnouncedDate.equals(today)) {
+				Debug("Already announced birthday today");
+				return true;
+			} else {
+				Debug("Birthday has not been announced today");
+				return false;
+			}
+		}
+		return false;
+	}
+	/*
+	 * Set the "lastAnnouncedDate" on the player's record
+	 */
+	public boolean SetAnnounced(String player, Date newdate) {
+		String datestr = "";
+		if (newdate != null) {
+			datestr = new SimpleDateFormat("yyyy-MM-dd").format(newdate);
+		}
+		String query = "UPDATE birthdaygift SET lastAnnouncedDate=? WHERE player=?";
+		dbcon.PreparedUpdate(query, new String[]{datestr, player.toLowerCase()});
+		return true;
+	}
+
+	/*
 	 * Set the player's birthday (updates existing record if already exists)
 	 */
 	public boolean SetPlayerBirthday(String player, Date bdate) {
@@ -308,7 +380,7 @@ public final class BirthdayGift extends JavaPlugin {
 
 		String query;
 		if (birthday == null) {
-			query = "INSERT INTO birthdaygift (birthdayDate, player, lastGiftDate) VALUES (?, ?, '')";
+			query = "INSERT INTO birthdaygift (birthdayDate, player, lastGiftDate, lastAnnouncedDate) VALUES (?, ?, '', '')";
 		} else {
 			query = "UPDATE birthdaygift SET birthdayDate=? WHERE player=?";
 		}
@@ -331,11 +403,11 @@ public final class BirthdayGift extends JavaPlugin {
 	public boolean HasPermission(Player player, String perm) {
 		if (player instanceof Player) {
 			// Real player
-			if (player.hasPermission("birthdaygift.*") && player.hasPermission(perm)) {		// Temporary hack to make wildcard permissions work
+			if (player.hasPermission(perm)) {
 				return true;
 			}
 		} else {
-			// Console
+			// Console has permissions for everything
 			return true;
 		}
 		return false;

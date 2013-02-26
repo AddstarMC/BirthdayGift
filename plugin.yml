@@ -1,6 +1,6 @@
 name: BirthdayGift
 main: au.com.addstar.birthdaygift.BirthdayGift
-version: 1.0.0
+version: 1.1.0
 author: add5tar
 load-after: Vault
 website: http://dev.bukkit.org/server-mods/birthdaygift/
@@ -19,13 +19,18 @@ permissions:
     description: Full access to all commands (admin)
     children:
       birthdaygift.use: true
+      birthdaygift.claim: true
       birthdaygift.info: true
       birthdaygift.stats: true
       birthdaygift.set: true
       birthdaygift.reset: true
       birthdaygift.delete: true
+    default: op
   birthdaygift.use:
     description: Allow use of the /birthday command
+    default: true
+  birthdaygift.claim:
+    description: Allow use of the /bgift claim command (to allow claiming only in specific worlds)
     default: true
   birthdaygift.info:
     description: Allow access to the /bgift info command
