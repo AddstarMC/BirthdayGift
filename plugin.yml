@@ -1,6 +1,6 @@
 name: BirthdayGift
 main: au.com.addstar.birthdaygift.BirthdayGift
-version: 1.1.0
+version: 1.2.0
 author: add5tar
 load-after: Vault
 website: http://dev.bukkit.org/server-mods/birthdaygift/

@@ -70,6 +70,15 @@ public final class BirthdayGift extends JavaPlugin {
 		Date lastGiftDate = null;
 		Date lastAnnouncedDate = null;
 	}
+	
+	static class BirthdayStats {
+		int TotalBirthdays = 0;
+		int MonthBirthdays = 0;
+		int ClaimedGiftsThisYear = 0;
+		int UnclaimedGiftsThisYear = 0;
+		Date NextBirthdayDate = null;
+		String NextBirthdayPlayer = "";
+	}
 		
 	@Override
 	public void onEnable(){
@@ -175,8 +184,11 @@ public final class BirthdayGift extends JavaPlugin {
 	
 	public boolean GiveItemStack(Player player, ItemStack itemstack) {
 		PlayerInventory inventory = player.getInventory();
-		HashMap result = inventory.addItem(itemstack);
+		HashMap<Integer, ItemStack> result = inventory.addItem(itemstack);
 		//TODO: Check "result" to ensure all items were given
+		if (result == null) {
+			return false;
+		}
 		return true;
 	}
 
@@ -424,5 +436,41 @@ public final class BirthdayGift extends JavaPlugin {
 			}
 		}
 		return true;
+	}
+	
+	public BirthdayStats getBirthdayStats() throws SQLException {
+		if (!dbcon.IsConnected) { return null; }
+
+		BirthdayStats stats = new BirthdayStats();
+		ResultSet res;
+
+		String year = new SimpleDateFormat("YYYY").format(new Date());
+		String month = new SimpleDateFormat("MM").format(new Date());
+
+		// Total birthday records
+		res = dbcon.ExecuteQuery("SELECT COUNT(*) FROM birthdaygift");
+		if ((res != null) && (res.next())) {
+			stats.TotalBirthdays = res.getInt(1);
+		}
+
+		// Total birthdays this month
+		res = dbcon.ExecuteQuery("SELECT COUNT(*) FROM birthdaygift WHERE strftime('%m', BirthdayDate) = '" + month + "'");
+		if ((res != null) && (res.next())) {
+			stats.MonthBirthdays = res.getInt(1);
+		}
+		
+		// Total claimed gifts this year
+		res = dbcon.ExecuteQuery("SELECT COUNT(*) FROM birthdaygift WHERE strftime('%Y', lastGiftDate) = '" + year + "'");
+		if ((res != null) && (res.next())) {
+			stats.ClaimedGiftsThisYear = res.getInt(1);
+		}
+		
+		// Total unclaimed gifts this year
+		res = dbcon.ExecuteQuery("SELECT COUNT(*) FROM birthdaygift WHERE strftime('%Y', lastAnnouncedDate) = '" + year + "' AND strftime('%Y', lastGiftDate) IS NOT '" + year + "'");
+		if ((res != null) && (res.next())) {
+			stats.UnclaimedGiftsThisYear = res.getInt(1);
+		}
+		
+		return stats;
 	}
 }

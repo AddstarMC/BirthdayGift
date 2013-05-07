@@ -17,6 +17,7 @@ package au.com.addstar.birthdaygift;
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,6 +29,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import au.com.addstar.birthdaygift.BirthdayGift.BirthdayRecord;
+import au.com.addstar.birthdaygift.BirthdayGift.BirthdayStats;
 
 public class CommandBirthdayGift implements CommandExecutor {
 	private BirthdayGift plugin;
@@ -144,7 +146,22 @@ public class CommandBirthdayGift implements CommandExecutor {
 					if (!plugin.RequirePermission((Player) sender, "birthdaygift.stats")) { return false; }
 				}
 
-				sender.sendMessage(ChatColor.RED + "Feature not implemented yet.");
+				BirthdayStats stats = null;
+				try {
+					stats = plugin.getBirthdayStats();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+
+				if (stats != null) {
+					sender.sendMessage(ChatColor.GREEN + "BirthdayGift Statistics:");
+					sender.sendMessage(ChatColor.YELLOW + "Total birthdays: " + ChatColor.WHITE + stats.TotalBirthdays);
+					sender.sendMessage(ChatColor.YELLOW + "Gifts claimed this year: " + ChatColor.WHITE + stats.ClaimedGiftsThisYear);
+					sender.sendMessage(ChatColor.YELLOW + "Gifts unclaimed this year: " + ChatColor.WHITE + stats.UnclaimedGiftsThisYear);
+					sender.sendMessage(ChatColor.YELLOW + "Birthdays this month: " + ChatColor.WHITE + stats.MonthBirthdays);
+				}
+				
 				break;
 			case "SET":
 				/*
