@@ -78,7 +78,10 @@ public class CommandBirthdayGift implements CommandExecutor {
 							gdate = new SimpleDateFormat("dd MMM yyyy").format(rec.lastGiftDate);
 						}
 						
-						sender.sendMessage(ChatColor.YELLOW + "Birthday Date: " + ChatColor.WHITE + bdate);
+						// Calculate age
+						int age = plugin.getAge(rec.birthdayDate); 
+						
+						sender.sendMessage(ChatColor.YELLOW + "Birthday Date: " + ChatColor.WHITE + bdate + " (age " + age + ")");
 						sender.sendMessage(ChatColor.YELLOW + "Last Gift Received On: " + ChatColor.WHITE + gdate);
 					}
 				}
