@@ -43,6 +43,7 @@ public class Database {
 
 	public boolean OpenDatabase() {
 		try {
+			Class.forName("org.sqlite.JDBC");
 			Conn = DriverManager.getConnection("jdbc:sqlite:plugins/" + plugin.getName() + "/" + DBFilename);
 			IsConnected = true;
 			
