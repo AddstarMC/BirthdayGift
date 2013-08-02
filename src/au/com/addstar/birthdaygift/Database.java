@@ -86,11 +86,9 @@ public class Database {
 		} catch (SQLException e) {
 			plugin.Warn("Unable to open database!");
 			e.printStackTrace();
-			return false;
 		} catch (ClassNotFoundException e) {
 			plugin.Warn("Unable to find a suitable SQLite driver!");
 			e.printStackTrace();
-			return false;
 		}
 		return false;
 	}
