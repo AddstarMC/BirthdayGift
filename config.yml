@@ -17,6 +17,11 @@ messages:
 # Set to 0 to disable 
 money: 1000
 
+# Which format do we use to interpret dates entered by players
+#   true  = MM-DD-YYYY  (US date format)
+#	false = DD-MM-YYYY  (European date format)    
+us-date-format: false 
+
 # Which items to give to the player on their birthday
 # Leave list empty to disable
 # Format is: <ITEM>[,AMOUNT]

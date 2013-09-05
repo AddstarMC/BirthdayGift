@@ -21,6 +21,7 @@ import java.util.Date;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -35,10 +36,18 @@ public class PlayerListener implements Listener {
 		plugin = instance;
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		final Player player = event.getPlayer();
 		final Server server = player.getServer();
+		
+		// Do not do broadcasts/join messages if another plugin silenced the join message (eg. VanishNoPacket)
+		final boolean DoBroadcast;
+		if (event.getJoinMessage() == "") {
+			DoBroadcast = false;
+		} else {
+			DoBroadcast = true;
+		}
 		
 		// Ignore anyone without the "use" permission
 		if (!plugin.HasPermission(player, "birthdaygift.use")) { return; }
@@ -47,8 +56,8 @@ public class PlayerListener implements Listener {
 		if (plugin.IsPlayerBirthday(birthday)) {
 			plugin.Log("Today is " + player.getName() + "'s birthday!");
 
-			// Set special join message (if set)
-			if (plugin.JoinMessage != "") {
+			// Set special join message
+			if ((DoBroadcast) && (plugin.JoinMessage != "")) {
 				String msg = plugin.JoinMessage.replaceAll("<PLAYER>", player.getName());
 				msg = ChatColor.translateAlternateColorCodes('&', msg);
 				event.setJoinMessage(msg);
@@ -61,7 +70,7 @@ public class PlayerListener implements Listener {
 					// Broadcast birthday message (if set, and hasn't already happened today)
 					if (!plugin.ReceivedGiftToday(birthday)) {
 						// Broadcast the announcement
-						if (plugin.AnnounceMessage != "") {
+						if ((DoBroadcast) && (plugin.AnnounceMessage != "")) {
 							if (!plugin.AnnouncedToday(birthday)) {
 								plugin.SetAnnounced(player.getName(), new Date());
 								String msg = plugin.AnnounceMessage.replaceAll("<PLAYER>", player.getName());

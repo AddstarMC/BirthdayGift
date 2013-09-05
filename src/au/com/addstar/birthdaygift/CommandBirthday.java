@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -61,9 +62,10 @@ public class CommandBirthday implements CommandExecutor {
 					// Set player's birthday	
 					Date bdate;
 					try {
-						bdate = new SimpleDateFormat("dd-MM-yyyy").parse(args[0]);
+						String input = StringUtils.join(args, "-");
+						bdate = new SimpleDateFormat(plugin.InputDateFormat).parse(input);
 					} catch (ParseException e) {
-						player.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: DD-MM-YYYY");
+						player.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
 						return true;
 					}
 					

@@ -36,7 +36,8 @@ public class ConfigManager {
 	public void LoadConfig(FileConfiguration config) {
 		config.options().copyDefaults(true);
 
-		plugin.DebugEnabled = Config().getBoolean("debug");
+		plugin.DebugEnabled = Config().getBoolean("debug", false);
+		plugin.USDateFormat = Config().getBoolean("us-date-format", false);
 		plugin.JoinMessage = Config().getString("messages.join");
 		plugin.AnnounceMessage = Config().getString("messages.announcement");
 		plugin.GiftMessage = Config().getString("messages.gift");

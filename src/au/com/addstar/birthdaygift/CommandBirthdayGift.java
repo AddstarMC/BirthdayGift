@@ -183,9 +183,9 @@ public class CommandBirthdayGift implements CommandExecutor {
 					player = args[1].toLowerCase();
 					String birthdate = args[2].toLowerCase();
 					try {
-						bdate = new SimpleDateFormat("dd-MM-yyyy").parse(birthdate);
+						bdate = new SimpleDateFormat(plugin.InputDateFormat).parse(birthdate);
 					} catch (ParseException e) {
-						sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: DD-MM-YYYY");
+						sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
 						return true;
 					}
 					rec = new BirthdayRecord();

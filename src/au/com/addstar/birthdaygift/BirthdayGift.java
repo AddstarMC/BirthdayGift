@@ -58,6 +58,8 @@ public final class BirthdayGift extends JavaPlugin {
 	public String GiftMessage = "";
 	public String ClaimMessage = "";
 	public String MoneyMessage = "";
+	public boolean USDateFormat = false;
+	public String InputDateFormat;
 	private static final Logger logger = Logger.getLogger("BirthdayGift");
 	public ConfigManager cfg = new ConfigManager(this);
 	public List<ItemStack> RewardItems = new ArrayList<ItemStack>();
@@ -101,10 +103,12 @@ public final class BirthdayGift extends JavaPlugin {
 		// Save the default config (if one doesn't exist)
 		saveDefaultConfig();
 
-		getCommand("birthday").setExecutor(new CommandBirthday(this));
-		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
-		getCommand("birthdaygift").setAliases(Arrays.asList("bgift"));
-
+		if (USDateFormat) {
+			InputDateFormat = "MM-dd-yyyy";
+		} else {
+			InputDateFormat = "dd-MM-yyyy";
+		}
+		
 		// Open/initialise the database
 		dbcon = new Database(this, "birthday.db");
 		if (dbcon.IsConnected) {
@@ -114,6 +118,10 @@ public final class BirthdayGift extends JavaPlugin {
 			this.setEnabled(false);
 			return;
 		}
+
+		getCommand("birthday").setExecutor(new CommandBirthday(this));
+		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
+		getCommand("birthdaygift").setAliases(Arrays.asList("bgift"));
 	}
 	
 	@Override
