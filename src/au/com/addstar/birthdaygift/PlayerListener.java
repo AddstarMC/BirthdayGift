@@ -36,14 +36,15 @@ public class PlayerListener implements Listener {
 		plugin = instance;
 	}
 	
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		final Player player = event.getPlayer();
 		final Server server = player.getServer();
 		
 		// Do not do broadcasts/join messages if another plugin silenced the join message (eg. VanishNoPacket)
 		final boolean DoBroadcast;
-		if (event.getJoinMessage() == "") {
+		if ((event.getJoinMessage() == "") || (plugin.HasPermission(player, "vanish.silentjoin"))) {
+			plugin.Debug("Player has joined silently. Refusing to broadcast!");
 			DoBroadcast = false;
 		} else {
 			DoBroadcast = true;
