@@ -176,7 +176,7 @@ public class CommandBirthdayGift implements CommandExecutor {
 
 				if (args.length < 3) {
 					// Not enough parameters
-					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift set <player> <DD-MM-YYYY>");
+					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift set <player> <" + plugin.InputDateFormat.toUpperCase() + ">");
 				} else {
 					// Set player's birthday	
 					Date bdate;

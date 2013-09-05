@@ -53,7 +53,11 @@ public class CommandBirthday implements CommandExecutor {
 					// Display player's birthday
 					if ((birthday == null) || (birthday.birthdayDate == null)) {
 						player.sendMessage(ChatColor.RED + "You have not set your birthday yet.");
-						player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
+						if (plugin.USDateFormat) {
+							player.sendMessage(ChatColor.YELLOW + "Usage: /birthday MM-DD-YYYY    " + ChatColor.WHITE + "(eg. /birthday 12-31-2001)");
+						} else {
+							player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
+						}
 					} else {
 						String mydate = new SimpleDateFormat("dd MMM yyyy").format(birthday.birthdayDate); 
 						player.sendMessage(ChatColor.YELLOW + "Your birthday is currently set to: " + ChatColor.GREEN + mydate);
