@@ -10,6 +10,7 @@ description: Reward players on their birthday and notify everyone of the player'
 commands:
   birthday:
     description: Set or view your birthday (to receive birthday gifts)
+    permission: birthdaygift.use
   bgift:
     aliases: birthdaygift
     description: Additional BirthdayGift commands

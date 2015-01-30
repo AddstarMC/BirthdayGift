@@ -7,9 +7,6 @@ debug: false
 #   gift: The message to send to the player when they receive their gift    
 #   join: The player's login message will be changed to this message on their birthday
 messages:
-  join: '&e<PLAYER> joined the game.. and it''s their &cbirthday &etoday!'
-  announcement: '&b-=-=-=- Please wish a &9Happy Birthday &bto <PLAYER> -=-=-=-'
-  claim: '&dYou have received birthday gift(s)! Type &b/bgift claim'
   gift: '&aWe hope you like your special birthday gifts!'
   money: '&aYou have been given &e$<MONEY>'
 
