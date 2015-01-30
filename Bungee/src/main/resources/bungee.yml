@@ -1,0 +1,5 @@
+name: BirthdayGift-Bungee
+author: Schmoller
+version: ${project.version}
+
+main: au.com.addstar.birthdaygift.BirthdayGift

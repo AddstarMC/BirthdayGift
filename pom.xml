@@ -16,5 +16,6 @@
 
   <modules>
     <module>Bukkit</module>
+    <module>Bungee</module>
   </modules>
 </project>
