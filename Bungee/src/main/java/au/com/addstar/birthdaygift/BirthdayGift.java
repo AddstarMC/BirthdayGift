@@ -60,7 +60,7 @@ public class BirthdayGift extends Plugin {
 			if (file.exists()) {
 				Messages.load(file);
 			} else {
-				Messages.load(getResourceAsStream("/messages.properties"));
+				Messages.load(getResourceAsStream("messages.properties"));
 			}
 		} catch (IOException e) {
 			getLogger().warning(
