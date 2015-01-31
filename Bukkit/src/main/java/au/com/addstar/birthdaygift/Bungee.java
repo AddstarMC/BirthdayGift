@@ -10,9 +10,10 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
+
+import au.com.addstar.monolith.lookup.PlayerDefinition;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -148,7 +149,7 @@ public class Bungee implements PluginMessageListener
 		}
 	}
 	
-	public void setBirthday(OfflinePlayer player, Date date) {
+	public void setBirthday(PlayerDefinition player, Date date) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Set");
 		out.writeUTF(player.getUniqueId().toString());
@@ -157,7 +158,7 @@ public class Bungee implements PluginMessageListener
 		send(out);
 	}
 	
-	public void getBirthday(OfflinePlayer player, ResultCallback<BirthdayRecord> callback) {
+	public void getBirthday(PlayerDefinition player, ResultCallback<BirthdayRecord> callback) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Get");
 		out.writeUTF(player.getUniqueId().toString());
@@ -186,7 +187,7 @@ public class Bungee implements PluginMessageListener
 		mClaimWaiters.add(new WaitingHandler<Boolean, UUID>(callback, player.getUniqueId()));
 	}
 	
-	public void resetGiftStatus(OfflinePlayer player) {
+	public void resetGiftStatus(PlayerDefinition player) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("ResetClaim");
 		out.writeUTF(player.getUniqueId().toString());
@@ -194,7 +195,7 @@ public class Bungee implements PluginMessageListener
 		send(out);
 	}
 	
-	public void deleteBirthday(OfflinePlayer player) {
+	public void deleteBirthday(PlayerDefinition player) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Del");
 		out.writeUTF(player.getUniqueId().toString());

@@ -22,13 +22,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import au.com.addstar.monolith.lookup.Lookup;
+import au.com.addstar.monolith.lookup.LookupCallback;
+import au.com.addstar.monolith.lookup.PlayerDefinition;
 
 public class CommandBirthdayGift implements CommandExecutor {
 	private BirthdayGift plugin;
@@ -62,41 +64,55 @@ public class CommandBirthdayGift implements CommandExecutor {
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift info <player>");
 				} else {
 					// Fetch player info
-					final OfflinePlayer player = Bukkit.getPlayer(args[1]);
-					plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
-					{
+					Lookup.lookupPlayerName(args[1], new LookupCallback<PlayerDefinition>() {
 						@Override
-						public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
-						{
+						public void onResult( boolean success, final PlayerDefinition player, Throwable error ) {
 							if (!success) {
 								if (error instanceof TimeoutException) {
 									sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
-								} else {
+								} else if (error != null) {
 									sender.sendMessage(ChatColor.RED + "An internal error occured");
-									if (error != null) {
-										error.printStackTrace();
-									}
+									error.printStackTrace();
+								} else {
+									sender.sendMessage(ChatColor.RED + "Unknown player");
 								}
 								return;
 							}
-							if (rec == null) {
-								sender.sendMessage(ChatColor.RED + "No birthday record found for " + ChatColor.WHITE + player.getName());
-							} else {
-								String bdate = "";
-								String gdate = "Never";
-								if (rec.birthdayDate != null) {
-									bdate = new SimpleDateFormat("dd MMM yyyy").format(rec.birthdayDate);
+							plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>() {
+								@Override
+								public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
+								{
+									if (!success) {
+										if (error instanceof TimeoutException) {
+											sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
+										} else {
+											sender.sendMessage(ChatColor.RED + "An internal error occured");
+											if (error != null) {
+												error.printStackTrace();
+											}
+										}
+										return;
+									}
+									if (rec == null) {
+										sender.sendMessage(ChatColor.RED + "No birthday record found for " + ChatColor.WHITE + player.getName());
+									} else {
+										String bdate = "";
+										String gdate = "Never";
+										if (rec.birthdayDate != null) {
+											bdate = new SimpleDateFormat("dd MMM yyyy").format(rec.birthdayDate);
+										}
+										if (rec.lastGiftDate != null) {
+											gdate = new SimpleDateFormat("dd MMM yyyy").format(rec.lastGiftDate);
+										}
+										
+										// Calculate age
+										int age = plugin.getAge(rec.birthdayDate); 
+										
+										sender.sendMessage(ChatColor.YELLOW + "Birthday Date: " + ChatColor.WHITE + bdate + " (age " + age + ")");
+										sender.sendMessage(ChatColor.YELLOW + "Last Gift Received On: " + ChatColor.WHITE + gdate);
+									}
 								}
-								if (rec.lastGiftDate != null) {
-									gdate = new SimpleDateFormat("dd MMM yyyy").format(rec.lastGiftDate);
-								}
-								
-								// Calculate age
-								int age = plugin.getAge(rec.birthdayDate); 
-								
-								sender.sendMessage(ChatColor.YELLOW + "Birthday Date: " + ChatColor.WHITE + bdate + " (age " + age + ")");
-								sender.sendMessage(ChatColor.YELLOW + "Last Gift Received On: " + ChatColor.WHITE + gdate);
-							}
+							});
 						}
 					});
 				}
@@ -114,8 +130,10 @@ public class CommandBirthdayGift implements CommandExecutor {
 				}
 				
 				final Player player = (Player)sender;
+				PlayerDefinition def = new PlayerDefinition(player.getUniqueId(), null);
+				
 				// Fetch player info
-				plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
+				plugin.getBungee().getBirthday(def, new ResultCallback<BirthdayRecord>()
 				{
 					@Override
 					public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
@@ -234,19 +252,34 @@ public class CommandBirthdayGift implements CommandExecutor {
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift set <player> <" + plugin.InputDateFormat.toUpperCase() + ">");
 				} else {
 					// Set player's birthday	
-					Date bdate;
-					final OfflinePlayer player = Bukkit.getPlayer(args[1]);
-					String birthdate = args[2].toLowerCase();
-					try {
-						bdate = new SimpleDateFormat(plugin.InputDateFormat).parse(birthdate);
-					} catch (ParseException e) {
-						sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
-						return true;
-					}
-					// Set player's birthday
-					plugin.getBungee().setBirthday(player, bdate);
-					String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate); 
-					sender.sendMessage(ChatColor.WHITE + player.getName() + "'s" + ChatColor.YELLOW + " birthday is now set to: " + ChatColor.GREEN + mydate);
+					Lookup.lookupPlayerName(args[1], new LookupCallback<PlayerDefinition>() {
+						@Override
+						public void onResult( boolean success, final PlayerDefinition player, Throwable error ) {
+							if (!success) {
+								if (error instanceof TimeoutException) {
+									sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
+								} else if (error != null) {
+									sender.sendMessage(ChatColor.RED + "An internal error occured");
+									error.printStackTrace();
+								} else {
+									sender.sendMessage(ChatColor.RED + "Unknown player");
+								}
+								return;
+							}
+							String birthdate = args[2].toLowerCase();
+							Date bdate;
+							try {
+								bdate = new SimpleDateFormat(plugin.InputDateFormat).parse(birthdate);
+							} catch (ParseException e) {
+								sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
+								return;
+							}
+							// Set player's birthday
+							plugin.getBungee().setBirthday(player, bdate);
+							String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate); 
+							sender.sendMessage(ChatColor.WHITE + player.getName() + "'s" + ChatColor.YELLOW + " birthday is now set to: " + ChatColor.GREEN + mydate);
+						}
+					});
 				}
 				break;
 			}
@@ -263,29 +296,44 @@ public class CommandBirthdayGift implements CommandExecutor {
 					sender.sendMessage(ChatColor.AQUA + "Usage: /bgift reset <player>");
 				} else {
 					// Fetch player info
-					final OfflinePlayer player = Bukkit.getPlayer(args[1]);
-					plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
-					{
+					Lookup.lookupPlayerName(args[1], new LookupCallback<PlayerDefinition>() {
 						@Override
-						public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
-						{
+						public void onResult( boolean success, final PlayerDefinition player, Throwable error ) {
 							if (!success) {
 								if (error instanceof TimeoutException) {
 									sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
-								} else {
+								} else if (error != null) {
 									sender.sendMessage(ChatColor.RED + "An internal error occured");
-									if (error != null) {
-										error.printStackTrace();
+									error.printStackTrace();
+								} else {
+									sender.sendMessage(ChatColor.RED + "Unknown player");
+								}
+								return;
+							}
+							plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
+							{
+								@Override
+								public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
+								{
+									if (!success) {
+										if (error instanceof TimeoutException) {
+											sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
+										} else {
+											sender.sendMessage(ChatColor.RED + "An internal error occured");
+											if (error != null) {
+												error.printStackTrace();
+											}
+										}
+									}
+									
+									if (rec == null) {
+										sender.sendMessage(ChatColor.RED + "No birthday record found for "+ ChatColor.WHITE + player.getName());
+									} else {
+										plugin.getBungee().resetGiftStatus(player);
+										sender.sendMessage(ChatColor.YELLOW + "Last Gift Received date has been reset for " + ChatColor.WHITE + player.getName());
 									}
 								}
-							}
-							
-							if (rec == null) {
-								sender.sendMessage(ChatColor.RED + "No birthday record found for "+ ChatColor.WHITE + player.getName());
-							} else {
-								plugin.getBungee().resetGiftStatus(player);
-								sender.sendMessage(ChatColor.YELLOW + "Last Gift Received date has been reset for " + ChatColor.WHITE + player.getName());
-							}
+							});
 						}
 					});
 				}
@@ -305,28 +353,43 @@ public class CommandBirthdayGift implements CommandExecutor {
 				} else {
 					// Fetch player info
 					
-					final OfflinePlayer player = Bukkit.getPlayer(args[1]);
-					plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
-					{
+					Lookup.lookupPlayerName(args[1], new LookupCallback<PlayerDefinition>() {
 						@Override
-						public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
-						{
+						public void onResult( boolean success, final PlayerDefinition player, Throwable error ) {
 							if (!success) {
 								if (error instanceof TimeoutException) {
 									sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
-								} else {
+								} else if (error != null) {
 									sender.sendMessage(ChatColor.RED + "An internal error occured");
-									if (error != null) {
-										error.printStackTrace();
+									error.printStackTrace();
+								} else {
+									sender.sendMessage(ChatColor.RED + "Unknown player");
+								}
+								return;
+							}
+							plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
+							{
+								@Override
+								public void onCompleted( boolean success, BirthdayRecord rec, Throwable error )
+								{
+									if (!success) {
+										if (error instanceof TimeoutException) {
+											sender.sendMessage(ChatColor.RED + "Unable to communicate with Bungee. Query timed out");
+										} else {
+											sender.sendMessage(ChatColor.RED + "An internal error occured");
+											if (error != null) {
+												error.printStackTrace();
+											}
+										}
+									}
+									if (rec == null) {
+										sender.sendMessage(ChatColor.RED + "No birthday record found for "+ ChatColor.WHITE + player.getName());
+									} else {
+										plugin.getBungee().deleteBirthday(player);
+										sender.sendMessage(ChatColor.YELLOW + "Birthday record for " + ChatColor.WHITE + player.getName() + ChatColor.YELLOW + " has been deleted");
 									}
 								}
-							}
-							if (rec == null) {
-								sender.sendMessage(ChatColor.RED + "No birthday record found for "+ ChatColor.WHITE + player.getName());
-							} else {
-								plugin.getBungee().deleteBirthday(player);
-								sender.sendMessage(ChatColor.YELLOW + "Birthday record for " + ChatColor.WHITE + player.getName() + ChatColor.YELLOW + " has been deleted");
-							}
+							});
 						}
 					});
 				}

@@ -28,6 +28,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import au.com.addstar.monolith.lookup.PlayerDefinition;
+
 public class CommandBirthday implements CommandExecutor {
 	private BirthdayGift plugin;
 	
@@ -45,7 +47,8 @@ public class CommandBirthday implements CommandExecutor {
 		}
 		
 		final Player player = (Player) sender;
-		plugin.getBungee().getBirthday(player, new ResultCallback<BirthdayRecord>()
+		final PlayerDefinition def = new PlayerDefinition(player.getUniqueId(), null);
+		plugin.getBungee().getBirthday(def, new ResultCallback<BirthdayRecord>()
 		{
 			@Override
 			public void onCompleted( boolean success, BirthdayRecord birthday, Throwable error )
@@ -90,7 +93,7 @@ public class CommandBirthday implements CommandExecutor {
 								return;
 							} else {
 								// Set player's birthday
-								plugin.getBungee().setBirthday(player, bdate);
+								plugin.getBungee().setBirthday(def, bdate);
 								String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate); 
 								player.sendMessage(ChatColor.YELLOW + "Your birthday is now set to: " + ChatColor.GREEN + mydate);
 							}
