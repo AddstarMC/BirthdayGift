@@ -4,11 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Date;
+import java.util.UUID;
 
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayRecord;
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayStats;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -42,22 +42,22 @@ public class PluginMessageListener implements Listener {
 
 			switch (subType) {
 			case "Set":
-				setBirthday(in.readUTF(), in.readLong());
+				setBirthday(UUID.fromString(in.readUTF()), in.readLong());
 				break;
 			case "Get":
-				getBirthday(in.readUTF(), sender);
+				getBirthday(UUID.fromString(in.readUTF()), sender);
 				break;
 			case "Claim":
-				claimGift(in.readUTF(), sender);
+				claimGift(UUID.fromString(in.readUTF()), sender);
 				break;
 			case "ResetClaim":
-				resetClaim(in.readUTF());
+				resetClaim(UUID.fromString(in.readUTF()));
 				break;
 			case "Stats":
 				getStats(sender);
 				break;
 			case "Del":
-				deleteBirthday(in.readUTF());
+				deleteBirthday(UUID.fromString(in.readUTF()));
 				break;
 			}
 		} catch (IOException e) {
@@ -77,15 +77,15 @@ public class PluginMessageListener implements Listener {
 		}
 	}
 
-	private void setBirthday(String name, long date) {
-		plugin.SetPlayerBirthday(name, new Date(date));
+	private void setBirthday(UUID id, long date) {
+		plugin.dbcon.setBirthday(id, new Date(date));
 	}
 
-	private void getBirthday(String name, ServerInfo sender) {
-		BirthdayRecord record = plugin.getPlayerRecord(name);
+	private void getBirthday(UUID id, ServerInfo sender) {
+		BirthdayRecord record = plugin.dbcon.getBirthday(id);
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("^Get");
-		out.writeUTF(name); // Name so we can identify the response
+		out.writeUTF(id.toString()); // Name so we can identify the response
 		
 		if (record == null) {
 			out.writeBoolean(false);
@@ -102,36 +102,37 @@ public class PluginMessageListener implements Listener {
 		sender.sendData(CHANNEL, out.toBytes());
 	}
 	
-	private void deleteBirthday(String name) {
-		plugin.DeletePlayerBirthday(name);
+	private void deleteBirthday(UUID id) {
+		plugin.dbcon.deleteBirthday(id);
 	}
 	
-	private void claimGift(String name, ServerInfo sender) {
-		BirthdayRecord record = plugin.getPlayerRecord(name);
+	private void claimGift(UUID id, ServerInfo sender) {
+		BirthdayRecord record = plugin.dbcon.getBirthday(id);
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("^Claim");
-		out.writeUTF(name); // Name so we can identify the response
+		out.writeUTF(id.toString()); // Name so we can identify the response
 		
 		if (record == null) {
 			out.writeBoolean(false);
 		} else if (plugin.ReceivedGiftToday(record)) {
 			out.writeBoolean(false);
 		} else {
+			plugin.dbcon.setGiftDate(id, new Date());
 			out.writeBoolean(true);
 		}
 		
 		sender.sendData(CHANNEL, out.toBytes());
 	}
 	
-	private void resetClaim(String name) {
-		plugin.SetGiftReceived(name, null);
+	private void resetClaim(UUID id) {
+		plugin.dbcon.setGiftDate(id, null);
 	}
 	
 	private void getStats(ServerInfo sender) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("^Stats");
 		
-		BirthdayStats stats = plugin.getBirthdayStats();
+		BirthdayStats stats = plugin.dbcon.getStats();
 		if (stats == null) {
 			return;
 		}
@@ -140,8 +141,6 @@ public class PluginMessageListener implements Listener {
 		out.writeInt(stats.MonthBirthdays);
 		out.writeInt(stats.ClaimedGiftsThisYear);
 		out.writeInt(stats.UnclaimedGiftsThisYear);
-		out.writeLong(stats.NextBirthdayDate.getTime());
-		out.writeUTF(stats.NextBirthdayPlayer);
 		
 		sender.sendData(CHANNEL, out.toBytes());
 	}

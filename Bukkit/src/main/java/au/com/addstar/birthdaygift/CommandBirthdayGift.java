@@ -29,9 +29,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayRecord;
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayStats;
-
 public class CommandBirthdayGift implements CommandExecutor {
 	private BirthdayGift plugin;
 	

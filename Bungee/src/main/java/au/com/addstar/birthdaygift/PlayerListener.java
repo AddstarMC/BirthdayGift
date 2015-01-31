@@ -30,7 +30,6 @@ import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import au.com.addstar.bc.BungeeChat;
 import au.com.addstar.bc.event.BCPlayerJoinEvent;
-import au.com.addstar.birthdaygift.BirthdayGift.*;
 
 public class PlayerListener implements Listener {
 
@@ -40,7 +39,7 @@ public class PlayerListener implements Listener {
 		plugin = instance;
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerJoin(BCPlayerJoinEvent event) {
 		final ProxiedPlayer player = event.getPlayer();
 
@@ -55,15 +54,13 @@ public class PlayerListener implements Listener {
 			return;
 		}
 
-		final BirthdayRecord birthday = plugin
-				.getPlayerRecord(player.getName());
+		final BirthdayRecord birthday = plugin.dbcon.getBirthday(player.getUniqueId());
+		System.out.println("Birthday record for " + player.getDisplayName() + ": " + birthday);
 		if (plugin.IsPlayerBirthday(birthday)) {
-			plugin.getLogger().info(
-					"Today is " + player.getName() + "'s birthday!");
+			plugin.getLogger().info("Today is " + player.getName() + "'s birthday!");
 
 			// Set special join message
-			String msg = Messages.Join.replaceAll("<PLAYER>",
-					player.getDisplayName());
+			String msg = Messages.Join.replaceAll("<PLAYER>",player.getDisplayName());
 			msg = ChatColor.translateAlternateColorCodes('&', msg);
 			event.setJoinMessage(msg);
 
@@ -77,32 +74,19 @@ public class PlayerListener implements Listener {
 							// already happened today)
 							if (!plugin.ReceivedGiftToday(birthday)) {
 								// Broadcast the announcement
-								if (BungeeChat.instance.getSyncManager()
-										.getPropertyBoolean(player,
-												"VNP:online", true)
-										&& !Messages.Announce.isEmpty()) {
+								if (BungeeChat.instance.getSyncManager().getPropertyBoolean(player, "VNP:online", true) && !Messages.Announce.isEmpty()) {
 									if (!plugin.AnnouncedToday(birthday)) {
-										plugin.SetAnnounced(player.getName(),
-												new Date());
-										String msg = Messages.Announce
-												.replaceAll("<PLAYER>",
-														player.getDisplayName());
-										msg = ChatColor
-												.translateAlternateColorCodes(
-														'&', msg);
-										ProxyServer.getInstance().broadcast(
-												TextComponent
-														.fromLegacyText(msg));
+										plugin.dbcon.setAnnounceDate(player.getUniqueId(), new Date());
+										String msg = Messages.Announce.replaceAll("<PLAYER>", player.getDisplayName());
+										msg = ChatColor.translateAlternateColorCodes('&', msg);
+										ProxyServer.getInstance().broadcast(TextComponent.fromLegacyText(msg));
 									}
 								}
 
 								// Remind player about how to claim
-								String msg = Messages.Claim.replaceAll(
-										"<PLAYER>", player.getDisplayName());
-								msg = ChatColor.translateAlternateColorCodes(
-										'&', msg);
-								player.sendMessage(TextComponent
-										.fromLegacyText(msg));
+								String msg = Messages.Claim.replaceAll("<PLAYER>", player.getDisplayName());
+								msg = ChatColor.translateAlternateColorCodes('&', msg);
+								player.sendMessage(TextComponent.fromLegacyText(msg));
 							}
 						}
 					}, 1, TimeUnit.SECONDS);

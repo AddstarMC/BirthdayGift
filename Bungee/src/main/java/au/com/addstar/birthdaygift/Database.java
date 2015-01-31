@@ -18,257 +18,222 @@ package au.com.addstar.birthdaygift;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import com.google.common.io.Files;
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
+import java.util.logging.Level;
 
 public class Database {
 	private BirthdayGift plugin;
-	public String DBFilename;
-	public Connection Conn;
-	public boolean IsConnected = false;
-
-	public Database(BirthdayGift instance, String filename) {
+	private Connection con;
+	
+	private PreparedStatement updateGiftDate;
+	private PreparedStatement updateAnnounceDate;
+	private PreparedStatement getBirthday;
+	private PreparedStatement insertBirthday;
+	private PreparedStatement deleteBirthday;
+	
+	public Database(BirthdayGift instance) {
 		plugin = instance;
-		DBFilename = filename;
-		OpenDatabase();
 	}
 
-	public boolean OpenDatabase() {
+	public boolean openDatabase(Config config) {
 		try {
-			Class.forName("org.sqlite.JDBC");
-			Conn = DriverManager.getConnection("jdbc:sqlite:"
-					+ plugin.getDataFolder().getPath() + "/" + DBFilename);
-			IsConnected = true;
-
-			if (TableExists(Conn, "birthdaygift")) {
-				// Check/update existing table
-				if (!ColumnExists(Conn, "birthdaygift", "lastAnnouncedDate")) {
-					plugin.getLogger().warning("Old table format detected!");
-
-					// Backup existing database
-					plugin.getLogger().info(
-							"Creating backup of existing database...");
-					File src = new File(plugin.getDataFolder(), DBFilename);
-					File dst = new File(plugin.getDataFolder(), "backup.db");
-
-					try {
-						Files.copy(src, dst);
-					} catch (IOException e) {
-						plugin.getLogger()
-								.severe("Unable to create database backup! Refusing to continue!!");
-						Conn.close();
-						IsConnected = false;
-						e.printStackTrace();
-						return false;
-					}
-
-					// Make changes to database
-					plugin.getLogger().info("Updating database table...");
-					int result = ExecuteUpdate("ALTER TABLE birthdaygift ADD COLUMN `lastAnnouncedDate` DATE");
-					plugin.Debug("SQL Result: " + result);
-				}
-			} else {
-				// Create new table schema
-				plugin.getLogger().info(
-						"Database table does not exist, creating one.");
-				ExecuteUpdate("CREATE TABLE IF NOT EXISTS birthdaygift ("
-						+ "`player` varchar(250) NOT NULL PRIMARY KEY, "
-						+ "`birthdayDate` DATE," + "`lastGiftDate` DATE,"
-						+ "`lastAnnouncedDate` DATE)");
-			}
-			IsConnected = true;
-			return false;
+			Class.forName("com.mysql.jdbc.Driver");
+			con = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/%s", config.getString("host", "localhost"), config.getInt("port", 3306), config.getString("database", "birthdaygift")), config.getString("user", "username"), config.getString("password", "password"));
+			
+			createTable();
+			createStatements();
+			return true;
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Unable to open database!");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			plugin.getLogger().severe(
-					"Unable to find a suitable SQLite driver!");
+			plugin.getLogger().severe("Unable to find a suitable MySQL driver!");
 			e.printStackTrace();
 		}
 		return false;
 	}
-
-	public ResultSet ExecuteQuery(String query) {
-		Statement st;
-
-		if (!IsConnected) {
-			return null;
-		}
-
+	
+	private void createTable() throws SQLException {
+		Statement statement = con.createStatement();
 		try {
-			st = Conn.createStatement();
-			plugin.Debug("SQL Query: " + query);
-			return st.executeQuery(query);
-		} catch (SQLException e) {
-			plugin.getLogger().warning("Query execution failed!");
-			plugin.getLogger().info("SQL: " + query);
-			e.printStackTrace();
-			return null;
+			statement.executeUpdate("CREATE TABLE IF NOT EXISTS birthdaygift ("
+						+ "`id` CHAR(36) PRIMARY KEY,"
+						+ "`birthday` DATE, `lastGift` DATE,"
+						+ "`lastAnnounced` DATE)");
+		} finally {
+			statement.close();
 		}
 	}
+	
+	private void createStatements() throws SQLException {
+		getBirthday = con.prepareStatement("SELECT birthday,lastGift,lastAnnounced FROM birthdaygift WHERE id=?");
+		updateGiftDate = con.prepareStatement("UPDATE birthdaygift SET lastGift=? WHERE id=?");
+		updateAnnounceDate = con.prepareStatement("UPDATE birthdaygift SET lastAnnounced=? WHERE id=?");
+		insertBirthday = con.prepareStatement("REPLACE birthdaygift (id, birthday) VALUES (?, ?)");
+		deleteBirthday = con.prepareStatement("DELETE FROM birthdaygift WHERE id=?");
+	}
+	
+	private void setParameters(PreparedStatement statement, Object... args) throws SQLException {
+        for (int i = 0; i < args.length; ++i) {
+        	if (args[i] == null) {
+        		statement.setNull(i+1, Types.DATE);
+        	} else if (args[i] instanceof Number) {
+                statement.setObject(i+1, args[i]);
+            } else if (args[i] instanceof String) {
+                statement.setString(i+1, (String)args[i]);
+            } else if (args[i] instanceof Date) {
+            	statement.setDate(i+1, new java.sql.Date(((Date)args[i]).getTime()));
+            } else {
+                statement.setString(i+1, String.valueOf(args[i]));
+            }
+        }
+    }
+	
+	private int executeUpdate(PreparedStatement statement, Object... args) {
+        try {
+            setParameters(statement, args);
+            
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Error executing sql update", e);
+            return 0;
+        }
+    }
+    
+    private ResultSet executeQuery(PreparedStatement statement, Object... args) throws SQLException {
+        setParameters(statement, args);
 
-	public ResultSet PreparedQuery(String query, String[] params) {
-		PreparedStatement ps;
-
-		if (!IsConnected) {
-			return null;
-		}
-
+        ResultSet result = statement.executeQuery();
+        return result;
+    }
+    
+    private void closeResultSet(ResultSet rs) {
+        if (rs != null) {
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Unable to close ResultSet", e);
+            }
+        }
+    }
+    
+    private void closeStatement(Statement st) {
+    	if (st != null) {
+            try {
+                st.close();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Unable to close Statement", e);
+            }
+        }
+    }
+	
+	public BirthdayRecord getBirthday(UUID player) {
+		ResultSet rs = null;
 		try {
-			ps = Conn.prepareStatement(query);
-			// Construct PreparedStatement by adding all supplied params to the
-			// query
-			plugin.Debug("SQL Query: " + query);
-			for (int x = 0; x < params.length; x++) {
-				plugin.Debug("Param " + (x + 1) + ": " + params[x]);
-				ps.setString(x + 1, params[x]);
+			rs = executeQuery(getBirthday, player.toString());
+			
+			if (rs.next()) {
+				BirthdayRecord record = new BirthdayRecord(player);
+				record.birthdayDate = rs.getDate("birthday");
+				record.lastGiftDate = rs.getDate("lastGift");
+				record.lastAnnouncedDate = rs.getDate("lastAnnounced");
+				
+				plugin.Debug("Retrieved DB record for " + player + ": " + record.birthdayDate);
+				return record;
+			} else {
+				plugin.Debug("No birthday set for " + player);
+				return null;
 			}
-			return ps.executeQuery();
 		} catch (SQLException e) {
-			plugin.getLogger().warning("Prepared query execution failed!");
-			plugin.getLogger().info("SQL: " + query);
-			e.printStackTrace();
+			plugin.getLogger().log(Level.SEVERE, "Error executing sql query", e);
 			return null;
+		} finally {
+			closeResultSet(rs);
 		}
 	}
-
-	public int ExecuteUpdate(String query) {
-		Statement st;
-
-		if (!IsConnected) {
-			return -1;
-		}
-
-		try {
-			st = Conn.createStatement();
-			plugin.Debug("SQL Update: " + query);
-			return st.executeUpdate(query);
-		} catch (SQLException e) {
-			plugin.getLogger().warning("Query execution failed!");
-			plugin.getLogger().info("SQL: " + query);
-			e.printStackTrace();
-			return -1;
-		}
+	
+	public void setBirthday(UUID playerId, Date birthday) {
+		executeUpdate(insertBirthday, playerId, birthday);
 	}
-
-	public int PreparedUpdate(String query, String[] params) {
-		PreparedStatement ps;
-
-		if (!IsConnected) {
-			return -1;
-		}
-
+	
+	public void deleteBirthday(UUID player) {
+		executeUpdate(deleteBirthday, player);
+	}
+	
+	public void setAnnounceDate(UUID player, Date date) {
+		executeUpdate(updateAnnounceDate, date, player);
+	}
+	
+	public void setGiftDate(UUID player, Date date) {
+		executeUpdate(updateGiftDate, date, player);
+	}
+	
+	public BirthdayStats getStats() {
+		Statement statement = null;
+		ResultSet rs = null;
 		try {
-			ps = Conn.prepareStatement(query);
-			// Construct PreparedStatement by adding all supplied params to the
-			// query
-			plugin.Debug("SQL Update: " + query);
-			for (int x = 0; x < params.length; x++) {
-				plugin.Debug("Param " + (x + 1) + ": " + params[x]);
-				ps.setString(x + 1, params[x]);
+			BirthdayStats stats = new BirthdayStats();
+			
+			String year = new SimpleDateFormat("YYYY").format(new Date());
+			String month = new SimpleDateFormat("MM").format(new Date());
+			
+			statement = con.createStatement();
+			
+			// Total birthday records
+			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift");
+			if (rs.next()) {
+				stats.TotalBirthdays = rs.getInt(1);
 			}
-			return ps.executeUpdate();
+			rs.close();
+			
+			// Total birthdays this month
+			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift WHERE DATE_FORMAT(birthday, '%m') = '" + month + "'");
+			if (rs.next()) {
+				stats.MonthBirthdays = rs.getInt(1);
+			}
+			rs.close();
+			
+			// Total claimed gifts this year
+			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift WHERE DATE_FORMAT(lastGift, '%Y') = '" + year + "'");
+			if (rs.next()) {
+				stats.ClaimedGiftsThisYear = rs.getInt(1);
+			}
+			rs.close();
+			
+			// Total unclaimed gifts this year
+			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift WHERE DATE_FORMAT(lastAnnounced, '%Y') = '" + year + "' AND DATE_FORMAT(lastGift, '%Y') IS NOT '" + year + "'");
+			if (rs.next()) {
+				stats.UnclaimedGiftsThisYear = rs.getInt(1);
+			}
+			rs.close();
+			
+			return stats;
 		} catch (SQLException e) {
-			plugin.getLogger().warning("Prepared query execution failed!");
-			plugin.getLogger().info("SQL: " + query);
-			e.printStackTrace();
-			return -1;
+			plugin.getLogger().log(Level.SEVERE, "Error executing sql query", e);
+			return null;
+		} finally {
+			closeResultSet(rs);
+			closeStatement(statement);
 		}
 	}
 
-	public boolean CloseDatabase() {
+	public boolean close() {
 		try {
-			Conn.close();
+			con.close();
 		} catch (SQLException e) {
 			plugin.getLogger().warning("Close database failed!");
 			e.printStackTrace();
 		}
 		return true;
 	}
-
-	public boolean TableExists(Connection conn, String tname) {
-		DatabaseMetaData md;
-		ResultSet rs;
-
-		try {
-			md = conn.getMetaData();
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning(
-					"Unable to read DatabaseMetaData from DB connection!");
-			e.printStackTrace();
-			return false;
-		}
-
-		try {
-			plugin.Debug("Getting list of database tables");
-			rs = md.getTables(null, null, tname, null);
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning(
-					"Unable to getTables from DatabaseMetaData!");
-			e.printStackTrace();
-			return false;
-		}
-
-		try {
-			if (rs.next()) {
-				// Table exists
-				return true;
-			}
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning("Unable to iterate table resultSet!");
-			e.printStackTrace();
-		}
-		return false;
-	}
-
-	public boolean ColumnExists(Connection conn, String tname, String cname) {
-		DatabaseMetaData md;
-		ResultSet rs;
-
-		try {
-			md = conn.getMetaData();
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning(
-					"Unable to read DatabaseMetaData from DB connection!");
-			e.printStackTrace();
-			return false;
-		}
-
-		try {
-			plugin.Debug("Getting list of table columns");
-			rs = md.getColumns(null, null, tname, cname);
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning(
-					"Unable to getColumns from DatabaseMetaData!");
-			e.printStackTrace();
-			return false;
-		}
-
-		try {
-			if (rs.next()) {
-				// Table exists
-				return true;
-			}
-		} catch (SQLException e) {
-			// This shouldn't really happen
-			plugin.getLogger().warning("Unable to iterate column resultSet!");
-			e.printStackTrace();
-		}
-		return false;
-	}
 }
+

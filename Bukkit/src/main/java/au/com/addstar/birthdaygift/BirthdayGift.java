@@ -62,22 +62,6 @@ public final class BirthdayGift extends JavaPlugin {
 	
 	private Bungee bungee;
 	
-	public static class BirthdayRecord {
-		public String playerName = "";
-		public Date birthdayDate = null;
-		public Date lastGiftDate = null;
-		public Date lastAnnouncedDate = null;
-	}
-	
-	public static class BirthdayStats {
-		public int TotalBirthdays = 0;
-		public int MonthBirthdays = 0;
-		public int ClaimedGiftsThisYear = 0;
-		public int UnclaimedGiftsThisYear = 0;
-		public Date NextBirthdayDate = null;
-		public String NextBirthdayPlayer = "";
-	}
-		
 	@Override
 	public void onEnable(){
 		// Register necessary events

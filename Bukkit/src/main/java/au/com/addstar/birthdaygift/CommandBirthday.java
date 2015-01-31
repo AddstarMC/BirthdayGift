@@ -28,8 +28,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayRecord;
-
 public class CommandBirthday implements CommandExecutor {
 	private BirthdayGift plugin;
 	
@@ -84,7 +82,7 @@ public class CommandBirthday implements CommandExecutor {
 						
 						if (birthday == null) {
 							// Player's birthday is not set
-							BirthdayRecord rec = new BirthdayRecord();
+							BirthdayRecord rec = new BirthdayRecord(player.getUniqueId());
 							rec.birthdayDate = bdate;
 							if (plugin.IsPlayerBirthday(rec)) {
 								// Don't allow players to set the birthday to today

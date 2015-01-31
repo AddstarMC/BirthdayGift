@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import org.bukkit.Bukkit;
@@ -14,9 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
 import com.google.common.collect.Iterables;
-
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayRecord;
-import au.com.addstar.birthdaygift.BirthdayGift.BirthdayStats;
+import com.google.common.collect.Lists;
 
 public class Bungee implements PluginMessageListener
 {
@@ -24,14 +23,18 @@ public class Bungee implements PluginMessageListener
 	
 	private BirthdayGift plugin;
 	
-	private List<WaitingHandler<BirthdayRecord, String>> mGetBirthdayWaiters;
+	private List<WaitingHandler<BirthdayRecord, UUID>> mGetBirthdayWaiters;
 	private List<WaitingHandler<BirthdayStats, Void>> mGetStatsWaiters;
-	private List<WaitingHandler<Boolean, String>> mClaimWaiters;
+	private List<WaitingHandler<Boolean, UUID>> mClaimWaiters;
 	
 	public Bungee(BirthdayGift plugin) {
 		this.plugin = plugin;
 		Bukkit.getMessenger().registerIncomingPluginChannel(plugin, CHANNEL, this);
 		Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, CHANNEL);
+		
+		mGetBirthdayWaiters = Lists.newArrayList();
+		mGetStatsWaiters = Lists.newArrayList();
+		mClaimWaiters = Lists.newArrayList();
 	}
 	
 	@Override
@@ -78,11 +81,10 @@ public class Bungee implements PluginMessageListener
 	
 	private void onGetBirthday(DataInputStream in) throws IOException {
 		BirthdayRecord record = null;
-		String playerName = in.readUTF();
+		UUID playerId = UUID.fromString(in.readUTF());
 		
 		if (in.readBoolean()) {
-			record = new BirthdayRecord();
-			record.playerName = playerName;
+			record = new BirthdayRecord(playerId);
 			record.birthdayDate = new Date(in.readLong());
 			long claimDate = in.readLong();
 			if (claimDate != 0) {
@@ -91,14 +93,14 @@ public class Bungee implements PluginMessageListener
 		}
 		
 		// Find who asked for this and removed expired entries
-		Iterator<WaitingHandler<BirthdayRecord, String>> it = mGetBirthdayWaiters.iterator();
+		Iterator<WaitingHandler<BirthdayRecord, UUID>> it = mGetBirthdayWaiters.iterator();
 		while(it.hasNext()) {
-			WaitingHandler<BirthdayRecord, String> handler = it.next();
+			WaitingHandler<BirthdayRecord, UUID> handler = it.next();
 			
 			if (handler.isExpired()) {
 				handler.callback.onCompleted(false, null, new TimeoutException());
 				it.remove();
-			} else if (handler.value.equals(playerName)) {
+			} else if (handler.value.equals(playerId)) {
 				handler.callback.onCompleted(true, record, null);
 				it.remove();
 			}
@@ -106,18 +108,18 @@ public class Bungee implements PluginMessageListener
 	}
 	
 	private void onClaimGifts(DataInputStream in) throws IOException {
-		String playerName = in.readUTF();
+		UUID playerId = UUID.fromString(in.readUTF());
 		boolean success = in.readBoolean();
 		
 		// Find who asked for this and removed expired entries
-		Iterator<WaitingHandler<Boolean, String>> it = mClaimWaiters.iterator();
+		Iterator<WaitingHandler<Boolean, UUID>> it = mClaimWaiters.iterator();
 		while(it.hasNext()) {
-			WaitingHandler<Boolean, String> handler = it.next();
+			WaitingHandler<Boolean, UUID> handler = it.next();
 			
 			if (handler.isExpired()) {
 				handler.callback.onCompleted(false, null, new TimeoutException());
 				it.remove();
-			} else if (handler.value.equals(playerName)) {
+			} else if (handler.value.equals(playerId)) {
 				handler.callback.onCompleted(true, success, null);
 				it.remove();
 			}
@@ -130,8 +132,6 @@ public class Bungee implements PluginMessageListener
 		stats.MonthBirthdays = in.readInt();
 		stats.ClaimedGiftsThisYear = in.readInt();
 		stats.UnclaimedGiftsThisYear = in.readInt();
-		stats.NextBirthdayDate = new Date(in.readLong());
-		stats.NextBirthdayPlayer = in.readUTF();
 		
 		// Find who asked for this and removed expired entries
 		Iterator<WaitingHandler<BirthdayStats, Void>> it = mGetStatsWaiters.iterator();
@@ -151,7 +151,7 @@ public class Bungee implements PluginMessageListener
 	public void setBirthday(OfflinePlayer player, Date date) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Set");
-		out.writeUTF(player.getName());
+		out.writeUTF(player.getUniqueId().toString());
 		out.writeLong(date.getTime());
 		
 		send(out);
@@ -160,11 +160,11 @@ public class Bungee implements PluginMessageListener
 	public void getBirthday(OfflinePlayer player, ResultCallback<BirthdayRecord> callback) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Get");
-		out.writeUTF(player.getName());
+		out.writeUTF(player.getUniqueId().toString());
 		
 		send(out);
 		
-		mGetBirthdayWaiters.add(new WaitingHandler<BirthdayRecord, String>(callback, player.getName()));
+		mGetBirthdayWaiters.add(new WaitingHandler<BirthdayRecord, UUID>(callback, player.getUniqueId()));
 	}
 	
 	public void getStats(ResultCallback<BirthdayStats> callback) {
@@ -179,17 +179,17 @@ public class Bungee implements PluginMessageListener
 	public void claimGift(Player player, ResultCallback<Boolean> callback) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Claim");
-		out.writeUTF(player.getName());
+		out.writeUTF(player.getUniqueId().toString());
 		
 		send(out);
 		
-		mClaimWaiters.add(new WaitingHandler<Boolean, String>(callback, player.getName()));
+		mClaimWaiters.add(new WaitingHandler<Boolean, UUID>(callback, player.getUniqueId()));
 	}
 	
 	public void resetGiftStatus(OfflinePlayer player) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("ResetClaim");
-		out.writeUTF(player.getName());
+		out.writeUTF(player.getUniqueId().toString());
 		
 		send(out);
 	}
@@ -197,7 +197,7 @@ public class Bungee implements PluginMessageListener
 	public void deleteBirthday(OfflinePlayer player) {
 		ByteOutput out = new ByteOutput();
 		out.writeUTF("Del");
-		out.writeUTF(player.getName());
+		out.writeUTF(player.getUniqueId().toString());
 		
 		send(out);
 	}
