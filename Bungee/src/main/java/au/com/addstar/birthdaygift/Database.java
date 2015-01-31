@@ -210,7 +210,7 @@ public class Database {
 			rs.close();
 			
 			// Total unclaimed gifts this year
-			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift WHERE DATE_FORMAT(lastAnnounced, '%Y') = '" + year + "' AND DATE_FORMAT(lastGift, '%Y') IS NOT '" + year + "'");
+			rs = statement.executeQuery("SELECT COUNT(*) FROM birthdaygift WHERE DATE_FORMAT(lastAnnounced, '%Y') = '" + year + "' AND DATE_FORMAT(lastGift, '%Y') != '" + year + "'");
 			if (rs.next()) {
 				stats.UnclaimedGiftsThisYear = rs.getInt(1);
 			}
