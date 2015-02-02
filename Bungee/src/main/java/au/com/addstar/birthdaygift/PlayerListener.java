@@ -49,13 +49,7 @@ public class PlayerListener implements Listener {
 			return;
 		}
 
-		// Ignore anyone without the "use" permission
-		if (!player.hasPermission("birthdaygift.use")) {
-			return;
-		}
-
 		final BirthdayRecord birthday = plugin.dbcon.getBirthday(player.getUniqueId());
-		System.out.println("Birthday record for " + player.getDisplayName() + ": " + birthday);
 		if (plugin.IsPlayerBirthday(birthday)) {
 			plugin.getLogger().info("Today is " + player.getName() + "'s birthday!");
 
