@@ -9,6 +9,7 @@ debug: false
 messages:
   gift: '&aWe hope you like your special birthday gifts!'
   money: '&aYou have been given &e$<MONEY>'
+  noclaimpermission: '&cYou must be in the Survival world to claim your gifts.'
 
 # How much money to award the player on their birthday
 # Set to 0 to disable 

@@ -123,7 +123,10 @@ public class CommandBirthdayGift implements CommandExecutor {
 				 * Claim any waiting birthday gift(s)
 				 */
 				if ((sender instanceof Player)) {
-					if (!plugin.RequirePermission((Player) sender, "birthdaygift.claim")) { return false; }
+					if (!plugin.RequirePermission((Player) sender, "birthdaygift.claim")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.NoClaimMessage));
+						return true;
+					}
 				} else {
 					sender.sendMessage("Sorry, only in-game players can use this command");
 					return false;

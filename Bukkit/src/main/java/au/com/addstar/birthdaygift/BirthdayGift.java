@@ -52,6 +52,7 @@ public final class BirthdayGift extends JavaPlugin {
 	public boolean DebugEnabled = false;
 	public String GiftMessage = "";
 	public String MoneyMessage = "";
+	public String NoClaimMessage = "";
 	public boolean USDateFormat = false;
 	public String InputDateFormat;
 	private static final Logger logger = Logger.getLogger("BirthdayGift");

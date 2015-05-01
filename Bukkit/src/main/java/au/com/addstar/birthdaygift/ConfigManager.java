@@ -40,6 +40,7 @@ public class ConfigManager {
 		plugin.USDateFormat = Config().getBoolean("us-date-format", false);
 		plugin.GiftMessage = Config().getString("messages.gift");
 		plugin.MoneyMessage = Config().getString("messages.money");
+		plugin.NoClaimMessage = Config().getString("messages.noclaimpermission");
 
 		// Validate reward items
 		List<?> items = config.getList("items");
