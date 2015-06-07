@@ -269,14 +269,25 @@ public class CommandBirthdayGift implements CommandExecutor {
 								}
 								return;
 							}
+
 							String birthdate = args[2].toLowerCase();
-							Date bdate;
-							try {
-								bdate = new SimpleDateFormat(plugin.InputDateFormat).parse(birthdate);
-							} catch (ParseException e) {
-								sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
+
+							BirthdayParser parser = new BirthdayParser(plugin.USDateFormat, plugin.InputDateFormat);
+							boolean validateYear = false;
+
+							if (!parser.ParseBirthday(birthdate, validateYear))
+							{
+								String errorMessage = parser.ErrorMessage;
+								if (errorMessage == null || errorMessage.length() == 0)
+									sender.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
+								else
+								    sender.sendMessage(ChatColor.RED + parser.ErrorMessage);
+
 								return;
 							}
+
+							Date bdate = parser.ParsedBirthday;
+
 							// Set player's birthday
 							plugin.getBungee().setBirthday(player, bdate);
 							String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate); 
