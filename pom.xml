@@ -5,7 +5,16 @@
   <version>2.0.0</version>
   <name>BirthdayGift</name>
   <packaging>pom</packaging>
-
+    <properties>
+        <build.number />
+        <plugin.version>${project.version}-${build.number}</plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spigot.version>1.12.2-R0.1-SNAPSHOT</spigot.version>
+        <bungee.version>1.12-SNAPSHOT</bungee.version>
+        <bungeechat.version>1.1.0-SNAPSHOT</bungeechat.version>
+        <monolight.version>1.4.7-SNAPSHOT</monolight.version>
+        <vaultapi.version>1.6</vaultapi.version>
+    </properties>
   <repositories>
     <!-- Addstar repo -->
     <repository>
@@ -18,4 +27,19 @@
     <module>Bukkit</module>
     <module>Bungee</module>
   </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.3.2</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
