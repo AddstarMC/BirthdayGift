@@ -86,5 +86,13 @@
     	<version>${monolight.version}</version>
     </dependency>
   </dependencies>
-
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <targetPath>.</targetPath>
+      </resource>
+    </resources>
+  </build>
 </project>
