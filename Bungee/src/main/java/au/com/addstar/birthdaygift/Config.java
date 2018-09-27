@@ -26,7 +26,7 @@ public class Config {
 			try {
 				ByteSource src = new ByteSource() {
 					@Override
-					public InputStream openStream() throws IOException {
+					public InputStream openStream() {
 						return plugin.getResourceAsStream("config.properties");
 					}
 				};

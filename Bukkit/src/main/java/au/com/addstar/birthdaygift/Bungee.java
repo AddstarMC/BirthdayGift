@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 
 public class Bungee implements PluginMessageListener
 {
-	public static final String CHANNEL = "BGift";
+	public static final String CHANNEL = "bungee:gift";
 	
 	private BirthdayGift plugin;
 	

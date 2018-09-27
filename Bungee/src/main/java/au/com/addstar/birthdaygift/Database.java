@@ -111,9 +111,8 @@ public class Database {
     
     private ResultSet executeQuery(PreparedStatement statement, Object... args) throws SQLException {
         setParameters(statement, args);
-
-        ResultSet result = statement.executeQuery();
-        return result;
+	
+		return statement.executeQuery();
     }
     
     private void closeResultSet(ResultSet rs) {

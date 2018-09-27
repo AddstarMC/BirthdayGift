@@ -90,9 +90,7 @@ public class CommandBirthday implements CommandExecutor {
 						}
 
 						BirthdayParser parser = new BirthdayParser(plugin.USDateFormat, plugin.InputDateFormat);
-						boolean validateYear = true;
-
-						if (!parser.ParseBirthday(args[0], validateYear))
+						if (!parser.ParseBirthday(args[0], true))
 						{
 							String errorMessage = parser.ErrorMessage;
 							if (errorMessage == null || errorMessage.length() == 0)
@@ -114,7 +112,6 @@ public class CommandBirthday implements CommandExecutor {
 						if (plugin.IsPlayerBirthday(rec)) {
 							// Don't allow players to set the birthday to today
 							player.sendMessage(ChatColor.RED + "Sorry, you cannot set your birthday to today.");
-							return;
 						} else {
 							// Set player's birthday
 							plugin.getBungee().setBirthday(def, bdate);

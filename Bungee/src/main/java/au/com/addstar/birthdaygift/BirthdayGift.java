@@ -21,8 +21,8 @@ public class BirthdayGift extends Plugin {
 
 		loadMessages();
 		
-		if (!getDataFolder().exists())
-			getDataFolder().mkdirs();
+		if (!getDataFolder().exists()||(!getDataFolder().mkdirs()))getLogger().warning("Could not" +
+				" create Data folder");
 		
 		config = new Config(this);
 		if (!config.load()) {
@@ -34,7 +34,6 @@ public class BirthdayGift extends Plugin {
 		if (!dbcon.openDatabase(config)) {
 			getLogger().severe("Failed to connect to database.");
 			dbcon = null;
-			return;
 		}
 	}
 
@@ -79,11 +78,7 @@ public class BirthdayGift extends Plugin {
 			String bdate = sdf.format(birthday.birthdayDate);
 
 			// Check if today is the player's birthday (ignoring year)
-			if (bdate.equals(today)) {
-				return true;
-			} else {
-				return false;
-			}
+			return bdate.equals(today);
 		}
 		return false;
 	}

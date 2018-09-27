@@ -91,7 +91,7 @@ public final class BirthdayGift extends JavaPlugin {
 		
 		getCommand("birthday").setExecutor(new CommandBirthday(this));
 		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
-		getCommand("birthdaygift").setAliases(Arrays.asList("bgift"));
+		getCommand("birthdaygift").setAliases(Collections.singletonList("bgift"));
 		
 		bungee = new Bungee(this);
 	}
@@ -145,7 +145,7 @@ public final class BirthdayGift extends JavaPlugin {
 		return null;
 	}
 	
-	public boolean GiveMoney(String player, int money) {
+	public boolean GiveMoney(Player player, int money) {
 		if (VaultEnabled) {
 			EconomyResponse resp = econ.depositPlayer(player, money);
 			if (resp.type == ResponseType.SUCCESS) {
@@ -162,31 +162,24 @@ public final class BirthdayGift extends JavaPlugin {
 		PlayerInventory inventory = player.getInventory();
 		HashMap<Integer, ItemStack> result = inventory.addItem(itemstack);
 		//TODO: Check "result" to ensure all items were given
-		if (result == null) {
-			return false;
-		}
-		return true;
+		return result != null;
 	}
 
 	public ItemStack CreateStack(Material item, int datavalue, int amount) {
-		ItemStack itemstack = new ItemStack(item, amount, (short)datavalue);
-		return itemstack;
+		return new ItemStack(item, amount, (short)datavalue);
 	}
 
 	/*
 	 * Check if the player has the specified permission
 	 */
 	public boolean HasPermission(Player player, String perm) {
-		if (player instanceof Player) {
+		if (player != null) {
 			// Real player
-			if (player.hasPermission(perm)) {
-				return true;
-			}
+			return player.hasPermission(perm);
 		} else {
 			// Console has permissions for everything
 			return true;
 		}
-		return false;
 	}
 	
 	/*
@@ -194,10 +187,8 @@ public final class BirthdayGift extends JavaPlugin {
 	 */
 	public boolean RequirePermission(Player player, String perm) {
 		if (!HasPermission(player, perm)) {
-			if (player instanceof Player) {
-				player.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
-				return false;
-			}
+			player.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
+			return false;
 		}
 		return true;
 	}
@@ -214,11 +205,7 @@ public final class BirthdayGift extends JavaPlugin {
 			String bdate = sdf.format(birthday.birthdayDate);
 
 			// Check if today is the player's birthday (ignoring year)
-			if (bdate.equals(today)) {
-				return true;
-			} else {
-				return false;
-			}
+			return bdate.equals(today);
 		}
 		return false;
 	}

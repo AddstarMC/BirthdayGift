@@ -17,7 +17,6 @@ package au.com.addstar.birthdaygift;
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
@@ -192,11 +191,13 @@ public class CommandBirthdayGift implements CommandExecutor {
 											if (plugin.Config().isSet("money") && plugin.Config().isInt("money")) {
 												if (!plugin.MoneyMessage.isEmpty()) {
 													String msg = plugin.MoneyMessage.replaceAll("<PLAYER>", player.getDisplayName());
-													msg = plugin.MoneyMessage.replaceAll("<MONEY>", plugin.Config().getString("money"));
+													msg = msg.replaceAll("<MONEY>",
+															plugin.Config().getString("money"));
 													msg = ChatColor.translateAlternateColorCodes('&', msg);
 													sender.sendMessage(msg);
 												}
-												plugin.GiveMoney(sender.getName(), plugin.Config().getInt("money"));
+												plugin.GiveMoney(player, plugin.Config().getInt(
+														"money"));
 											}
 										} else {
 											sender.sendMessage(ChatColor.RED + "Sorry, you have already claimed your gift today.");
@@ -273,9 +274,8 @@ public class CommandBirthdayGift implements CommandExecutor {
 							String birthdate = args[2].toLowerCase();
 
 							BirthdayParser parser = new BirthdayParser(plugin.USDateFormat, plugin.InputDateFormat);
-							boolean validateYear = false;
 
-							if (!parser.ParseBirthday(birthdate, validateYear))
+							if (!parser.ParseBirthday(birthdate, false))
 							{
 								String errorMessage = parser.ErrorMessage;
 								if (errorMessage == null || errorMessage.length() == 0)

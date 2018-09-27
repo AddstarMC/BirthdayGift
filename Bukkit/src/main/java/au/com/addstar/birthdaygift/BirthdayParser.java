@@ -135,7 +135,7 @@ public class BirthdayParser {
             // Make it a 4-digit year by assuming they are at least 1 year old
 
             // Get century (2000, 2100, etc.)
-            Integer century = (int)(Math.floor(currentYear / 100)) * 100;
+            Integer century = (int)(Math.floor(currentYear.floatValue() / 100)) * 100;
 
             // Get two digit representation of the current year
             Integer currentYear2Digit = currentYear - century;
@@ -219,8 +219,7 @@ public class BirthdayParser {
     {
         try
         {
-            Integer numericValue = Integer.parseInt(value);
-            return numericValue;
+            return Integer.parseInt(value);
         } catch(NumberFormatException nfe)
         {
             return flagIfInvalid;
