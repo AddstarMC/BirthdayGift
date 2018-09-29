@@ -83,7 +83,7 @@
     <dependency>
     	<groupId>au.com.addstar</groupId>
     	<artifactId>Monolith</artifactId>
-    	<version>${monolight.version}</version>
+    	<version>${monolith.version}</version>
     </dependency>
   </dependencies>
   <build>

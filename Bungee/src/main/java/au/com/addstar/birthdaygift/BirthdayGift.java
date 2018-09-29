@@ -21,7 +21,7 @@ public class BirthdayGift extends Plugin {
 
 		loadMessages();
 		
-		if (!getDataFolder().exists()||(!getDataFolder().mkdirs()))getLogger().warning("Could not" +
+		if (!getDataFolder().exists()&&(!getDataFolder().mkdirs()))getLogger().warning("Could not" +
 				" create Data folder");
 		
 		config = new Config(this);
