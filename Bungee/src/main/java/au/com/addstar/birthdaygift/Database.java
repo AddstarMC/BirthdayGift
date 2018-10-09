@@ -27,6 +27,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -46,8 +47,15 @@ public class Database {
 
 	public boolean openDatabase(Config config) {
 		try {
+			Properties connectionProperties = new Properties();
+			connectionProperties.setProperty("useSSL",config.getString("useSSL","false"));
+			connectionProperties.setProperty("user",config.getString("user", "username"));
+			connectionProperties.setProperty("password",config.getString("password", "password"));
+			connectionProperties.setProperty("database",config.getString("database", "birthdaygift"));
 			Class.forName("com.mysql.jdbc.Driver");
-			con = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/%s", config.getString("host", "localhost"), config.getInt("port", 3306), config.getString("database", "birthdaygift")), config.getString("user", "username"), config.getString("password", "password"));
+			String url = String.format("jdbc:mysql://%s:%s/%s", config.getString("host",
+					"localhost"), config.getInt("port", 3306), config.getString("database", "birthdaygift"));
+			con = DriverManager.getConnection(url, connectionProperties);
 			
 			createTable();
 			createStatements();
@@ -63,14 +71,11 @@ public class Database {
 	}
 	
 	private void createTable() throws SQLException {
-		Statement statement = con.createStatement();
-		try {
+		try (Statement statement = con.createStatement()) {
 			statement.executeUpdate("CREATE TABLE IF NOT EXISTS birthdaygift ("
-						+ "`id` CHAR(36) PRIMARY KEY,"
-						+ "`birthday` DATE, `lastGift` DATE,"
-						+ "`lastAnnounced` DATE)");
-		} finally {
-			statement.close();
+					+ "`id` CHAR(36) PRIMARY KEY,"
+					+ "`birthday` DATE, `lastGift` DATE,"
+					+ "`lastAnnounced` DATE)");
 		}
 	}
 	

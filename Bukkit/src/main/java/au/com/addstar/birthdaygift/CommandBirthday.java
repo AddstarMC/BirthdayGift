@@ -46,78 +46,73 @@ public class CommandBirthday implements CommandExecutor {
 		
 		final Player player = (Player) sender;
 		final PlayerDefinition def = new PlayerDefinition(player.getUniqueId(), null);
-		plugin.getBungee().getBirthday(def, new ResultCallback<BirthdayRecord>()
-		{
-			@Override
-			public void onCompleted( boolean success, BirthdayRecord birthday, Throwable error )
-			{
-				if (!success) {
-					player.sendMessage(ChatColor.RED + "An internal error occured");
-					if (error != null) {
-						error.printStackTrace();
+		plugin.getBungee().getBirthday(def, (success, birthday, error) -> {
+			if (!success) {
+				player.sendMessage(ChatColor.RED + "An internal error occured");
+				if (error != null) {
+					error.printStackTrace();
+				}
+			} else {
+
+				String currentBirthday = "?";
+				if ((birthday != null) && (birthday.birthdayDate != null)) {
+					currentBirthday = new SimpleDateFormat("dd MMM yyyy").format(birthday.birthdayDate);
+				}
+
+				if (args.length == 0) {
+					// Display player's birthday
+					if ((birthday == null) || (birthday.birthdayDate == null)) {
+						player.sendMessage(ChatColor.RED + "You have not set your birthday yet.");
+						if (plugin.USDateFormat) {
+							player.sendMessage(ChatColor.YELLOW + "Usage: /birthday MM-DD-YYYY    " + ChatColor.WHITE + "(eg. /birthday 12-31-2001)");
+						} else {
+							player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
+						}
+					} else {
+						player.sendMessage(ChatColor.YELLOW + "Your birthday is currently set to: " + ChatColor.GREEN + currentBirthday);
 					}
 				} else {
 
-					String currentBirthday = "?";
-					if ((birthday != null) && (birthday.birthdayDate != null)) {
-						currentBirthday = new SimpleDateFormat("dd MMM yyyy").format(birthday.birthdayDate);
+					if (birthday != null) {
+						// Don't allow players to change their birthday once it's set
+						player.sendMessage(ChatColor.RED + "Sorry, you cannot change your birthday (" + currentBirthday + ")");
+						return;
 					}
 
-					if (args.length == 0) {
-						// Display player's birthday
-						if ((birthday == null) || (birthday.birthdayDate == null)) {
-							player.sendMessage(ChatColor.RED + "You have not set your birthday yet.");
-							if (plugin.USDateFormat) {
-								player.sendMessage(ChatColor.YELLOW + "Usage: /birthday MM-DD-YYYY    " + ChatColor.WHITE + "(eg. /birthday 12-31-2001)");
-							} else {
-								player.sendMessage(ChatColor.YELLOW + "Usage: /birthday DD-MM-YYYY    " + ChatColor.WHITE + "(eg. /birthday 31-12-2001)");
-							}
-						} else {
-							player.sendMessage(ChatColor.YELLOW + "Your birthday is currently set to: " + ChatColor.GREEN + currentBirthday);
-						}
-					} else {
+					if (args.length != 1) {
+						// Didn't supply just one argument
+						InformInvalidFormat(player);
+						return;
+					}
 
-						if (birthday != null) {
-							// Don't allow players to change their birthday once it's set
-							player.sendMessage(ChatColor.RED + "Sorry, you cannot change your birthday (" + currentBirthday + ")");
-							return;
-						}
-
-						if (args.length != 1) {
-							// Didn't supply just one argument
+					BirthdayParser parser = new BirthdayParser(plugin.USDateFormat, plugin.inputDateFormat);
+					if (!parser.parseBirthday(args[0], true))
+					{
+						String errorMessage = parser.ErrorMessage;
+						if (errorMessage == null || errorMessage.length() == 0)
 							InformInvalidFormat(player);
-							return;
-						}
+						else
+							player.sendMessage(ChatColor.RED + parser.ErrorMessage);
 
-						BirthdayParser parser = new BirthdayParser(plugin.USDateFormat, plugin.InputDateFormat);
-						if (!parser.ParseBirthday(args[0], true))
-						{
-							String errorMessage = parser.ErrorMessage;
-							if (errorMessage == null || errorMessage.length() == 0)
-								InformInvalidFormat(player);
-							else
-								player.sendMessage(ChatColor.RED + parser.ErrorMessage);
+						return;
+					}
 
-							return;
-						}
-
-						Date bdate = parser.ParsedBirthday;
+					Date bdate = parser.ParsedBirthday;
 
 
-						// Player's birthday is not set
-						// Validate the year
+					// Player's birthday is not set
+					// Validate the year
 
-						BirthdayRecord rec = new BirthdayRecord(player.getUniqueId());
-						rec.birthdayDate = bdate;
-						if (plugin.IsPlayerBirthday(rec)) {
-							// Don't allow players to set the birthday to today
-							player.sendMessage(ChatColor.RED + "Sorry, you cannot set your birthday to today.");
-						} else {
-							// Set player's birthday
-							plugin.getBungee().setBirthday(def, bdate);
-							String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate);
-							player.sendMessage(ChatColor.YELLOW + "Your birthday is now set to: " + ChatColor.GREEN + mydate);
-						}
+					BirthdayRecord rec = new BirthdayRecord(player.getUniqueId());
+					rec.birthdayDate = bdate;
+					if (plugin.IsPlayerBirthday(rec)) {
+						// Don't allow players to set the birthday to today
+						player.sendMessage(ChatColor.RED + "Sorry, you cannot set your birthday to today.");
+					} else {
+						// Set player's birthday
+						plugin.getBungee().setBirthday(def, bdate);
+						String mydate = new SimpleDateFormat("dd MMM yyyy").format(bdate);
+						player.sendMessage(ChatColor.YELLOW + "Your birthday is now set to: " + ChatColor.GREEN + mydate);
 					}
 				}
 			}
@@ -127,7 +122,7 @@ public class CommandBirthday implements CommandExecutor {
 
 	private void InformInvalidFormat(Player player)
 	{
-		player.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.InputDateFormat.toUpperCase());
+		player.sendMessage(ChatColor.RED + "Invalid birthday! Please use format: " + plugin.inputDateFormat.toUpperCase());
 	}
 
 }

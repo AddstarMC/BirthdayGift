@@ -29,16 +29,16 @@ public class BirthdayParser {
 
     public Date ParsedBirthday;
 
-    private boolean UsingUSDataFormat;
-    private String ExpectedDateFormat;
+    private final boolean UsingUSDataFormat;
+    private final String ExpectedDateFormat;
 
     // Constructor
-    public BirthdayParser(boolean usingUSDataFormat, String expectedDateFormat) {
+    public BirthdayParser(final boolean usingUSDataFormat, final String expectedDateFormat) {
         UsingUSDataFormat = usingUSDataFormat;
         ExpectedDateFormat = expectedDateFormat.toUpperCase();
     }
 
-    public boolean ParseBirthday(String birthdayText, boolean validateYear) {
+    public boolean parseBirthday(String birthdayText, boolean validateYear) {
 
         ErrorMessage = "";
 
@@ -48,7 +48,7 @@ public class BirthdayParser {
         DateParts dateInfo;
 
         if (birthdayText == null || birthdayText.length() == 0) {
-            SetDefaultErrorMessage();
+            setDefaultErrorMessage();
             return false;
         }
 
@@ -61,13 +61,13 @@ public class BirthdayParser {
         }
         else {
             // Invalid format
-            SetDefaultErrorMessage();
+            setDefaultErrorMessage();
             return false;
         }
 
         if (argsNew.length != 3)
         {
-            SetDefaultErrorMessage();
+            setDefaultErrorMessage();
             return false;
         }
 
@@ -88,7 +88,7 @@ public class BirthdayParser {
             return false;
         }
 
-        Boolean dayInvalid = false;
+        boolean dayInvalid = false;
         switch (birthdayMonth) {
             case 1:
             case 3:
@@ -167,7 +167,7 @@ public class BirthdayParser {
             String reconstructedDate = birthdayDay + "-" + birthdayMonth + "-" + birthdayYear;
             ParsedBirthday = new SimpleDateFormat("dd-MM-yyyy").parse(reconstructedDate);
         } catch (ParseException e) {
-            SetDefaultErrorMessage();
+            setDefaultErrorMessage();
             return false;
         }
 
@@ -188,7 +188,7 @@ public class BirthdayParser {
         return true;
     }
 
-    private void SetDefaultErrorMessage()
+    private void setDefaultErrorMessage()
     {
         ErrorMessage = "Invalid birthday! Please use format: " + ExpectedDateFormat;
     }

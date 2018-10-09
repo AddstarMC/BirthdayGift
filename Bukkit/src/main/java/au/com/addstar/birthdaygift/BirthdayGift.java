@@ -19,14 +19,18 @@ package au.com.addstar.birthdaygift;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
-import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
-import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -44,70 +48,67 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  */
 public final class BirthdayGift extends JavaPlugin {
-	public BirthdayGift plugin;
-	public static Economy econ = null;
-	public static Permission perms = null;
-	public static Chat chat = null;
-	public boolean VaultEnabled = false;
-	public boolean DebugEnabled = false;
-	public String GiftMessage = "";
-	public String MoneyMessage = "";
-	public String NoClaimMessage = "";
-	public boolean USDateFormat = false;
-	public String InputDateFormat;
-	private static final Logger logger = Logger.getLogger("BirthdayGift");
-	public ConfigManager cfg = new ConfigManager(this);
-	public List<ItemStack> RewardItems = new ArrayList<ItemStack>();
-	public PluginDescriptionFile pdfFile = null;
-	public PluginManager pm = null;
-	
-	private Bungee bungee;
-	
-	@Override
-	public void onEnable(){
-		// Register necessary events
-		pdfFile = this.getDescription();
-		pm = this.getServer().getPluginManager();
+    public static Economy econ = null;
+    public boolean vaultEnabled = false;
+    public boolean debugEnabled = false;
+    public String giftMessage = "";
+    public String moneyMessage = "";
+    public String noClaimMessage = "";
+    public boolean USDateFormat = false;
+    public String inputDateFormat;
+    private static final Logger logger = Logger.getLogger("BirthdayGift");
+    public ConfigManager cfg = new ConfigManager(this);
+    public List<ItemStack> rewardItems = new ArrayList<>();
+    public PluginDescriptionFile pdfFile = null;
+    public PluginManager pm = null;
+    
+    private Bungee bungee;
+    
+    @Override
+    public void onEnable(){
+        // Register necessary events
+        pdfFile = this.getDescription();
+        pm = this.getServer().getPluginManager();
 
-		// Check if vault is loaded (required for economy)
-		VaultEnabled = setupEconomy();
-		if (VaultEnabled) {
-			Log("Found Vault! Hooking for economy!");
-		} else {
-			Log("Vault was not detected! Economy rewards are not available.");
-		}
-		
-		// Read (or initialise) plugin config file
-		cfg.LoadConfig(getConfig());
+        // Check if vault is loaded (required for economy)
+        vaultEnabled = setupEconomy();
+        if (vaultEnabled) {
+            Log("Found Vault! Hooking for economy!");
+        } else {
+            Log("Vault was not detected! Economy rewards are not available.");
+        }
+        
+        // Read (or initialise) plugin config file
+        cfg.loadConfig(getConfig());
 
-		// Save the default config (if one doesn't exist)
-		saveDefaultConfig();
+        // Save the default config (if one doesn't exist)
+        saveDefaultConfig();
 
-		if (USDateFormat) {
-			InputDateFormat = "MM-dd-yyyy";
-		} else {
-			InputDateFormat = "dd-MM-yyyy";
-		}
-		
-		getCommand("birthday").setExecutor(new CommandBirthday(this));
-		getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
-		getCommand("birthdaygift").setAliases(Collections.singletonList("bgift"));
-		
-		bungee = new Bungee(this);
-	}
-	
-	@Override
-	public void onDisable(){
-		// cancel all tasks we created
+        if (USDateFormat) {
+            inputDateFormat = "MM-dd-yyyy";
+        } else {
+            inputDateFormat = "dd-MM-yyyy";
+        }
+        
+        getCommand("birthday").setExecutor(new CommandBirthday(this));
+        getCommand("birthdaygift").setExecutor(new CommandBirthdayGift(this));
+        getCommand("birthdaygift").setAliases(Collections.singletonList("bgift"));
+        
+        bungee = new Bungee(this);
+    }
+    
+    @Override
+    public void onDisable(){
+        // cancel all tasks we created
         getServer().getScheduler().cancelTasks(this);
-		
-		Log(pdfFile.getName() + " has been disabled!");
-	}
-	
-	/*
-	 * Detect/configure Vault
-	 */
-	private boolean setupEconomy() {
+        
+        Log(pdfFile.getName() + " has been disabled!");
+    }
+    
+    /*
+     * Detect/configure Vault
+     */
+    private boolean setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {
             return false;
         }
@@ -119,150 +120,162 @@ public final class BirthdayGift extends JavaPlugin {
         return econ != null;
     }
 
-	public void Log(String data) {
-		logger.info("[BirthdayGift] " + data);
-	}
+    public void Log(String data) {
+        logger.info("[BirthdayGift] " + data);
+    }
 
-	public void Warn(String data) {
-		logger.warning("[BirthdayGift] " + data);
-	}
-	
-	public void Debug(String data) {
-		if (DebugEnabled) {
-			logger.info("[BirthdayGift] DEBUG: " + data);
-		}
-	}
+    public void Warn(String data) {
+        logger.warning("[BirthdayGift] " + data);
+    }
+    
+    public void Debug(String data) {
+        if (debugEnabled) {
+            logger.info("[BirthdayGift] DEBUG: " + data);
+        }
+    }
 
-	public FileConfiguration Config() {
-		return getConfig();
-	}
-	
-	public Material GetMaterial(String name) {
-		Material mat = Material.matchMaterial(name);
-		if (mat != null) {
-			return mat;
-		}
-		return null;
-	}
-	
-	public boolean GiveMoney(Player player, int money) {
-		if (VaultEnabled) {
-			EconomyResponse resp = econ.depositPlayer(player, money);
-			if (resp.type == ResponseType.SUCCESS) {
-				Log(player + " has been given $" + resp.amount + " (new balance $" + resp.balance + ")");
-				return true;
-			} else {
-				Warn("Vault payment failed! Error: " + resp.errorMessage);
-			}
-		}
-		return false;
-	}
-	
-	public boolean GiveItemStack(Player player, ItemStack itemstack) {
-		PlayerInventory inventory = player.getInventory();
-		HashMap<Integer, ItemStack> result = inventory.addItem(itemstack);
-		//TODO: Check "result" to ensure all items were given
-		return result != null;
-	}
+    public FileConfiguration config() {
+        return getConfig();
+    }
+    
+    public boolean GiveMoney(Player player, int money) {
+        if (vaultEnabled) {
+            EconomyResponse resp = econ.depositPlayer(player, money);
+            if (resp.type == ResponseType.SUCCESS) {
+                Log(player + " has been given $" + resp.amount + " (new balance $" + resp.balance + ")");
+                return true;
+            } else {
+                Warn("Vault payment failed! Error: " + resp.errorMessage);
+            }
+        }
+        return false;
+    }
+    
+    public boolean GiveItemStack(Player player, ItemStack itemstack) {
+        PlayerInventory inventory = player.getInventory();
+        HashMap<Integer, ItemStack> result = inventory.addItem(itemstack);
+        if(result.size() > 0)
+        {
+            HashMap<Integer, ItemStack> failed = new HashMap<>();
+            for (Map.Entry<Integer, ItemStack> stack : result.entrySet()) {
+                
+                failed.putAll(player.getEnderChest().addItem(stack.getValue()));
+            }
+            if(failed.size() >0 ){
+                player.sendMessage("Your inventory was so full we couldnt give you all your " +
+                        "presents");
+                logger.info("------------------------------------");
+                logger.info("Bgift: Could not award player: " + player.getName());
+                for (Map.Entry<Integer, ItemStack> stack : failed.entrySet()) {
+                logger.info(stack.getKey() + " : " + stack.getValue().toString());}
+                logger.info("------------------------------------");
+                return false;
+            }
+            return false;
+        }
+        return true;
+    }
+    @Deprecated
+    //todo remove with 1.13
+    public ItemStack CreateStack(Material item, int datavalue, int amount) {
+        return new ItemStack(item, amount, (short)datavalue);
+    }
+    
 
-	public ItemStack CreateStack(Material item, int datavalue, int amount) {
-		return new ItemStack(item, amount, (short)datavalue);
-	}
+    /*
+     * Check if the player has the specified permission
+     */
+    public boolean hasPerm(Player player, String perm) {
+        if (player != null) {
+            // Real player
+            return player.hasPermission(perm);
+        } else {
+            // Console has permissions for everything
+            return true;
+        }
+    }
+    
+    /*
+     * Check required permission and send error response to player if not allowed
+     */
+    public boolean hasPermission(Player player, String perm) {
+        if (!hasPerm(player, perm)) {
+            player.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
+            return false;
+        }
+        return true;
+    }
+    
+    /*
+     * Check if it is the player's birthday today
+     */
+    public boolean IsPlayerBirthday(BirthdayRecord birthday) {
+        // Is there a birthday record for this player?
+        if (birthday != null) {
+            // Get current date without year/time
+            SimpleDateFormat sdf = new SimpleDateFormat("MM-dd");
+            String today = sdf.format(new Date());
+            String bdate = sdf.format(birthday.birthdayDate);
 
-	/*
-	 * Check if the player has the specified permission
-	 */
-	public boolean HasPermission(Player player, String perm) {
-		if (player != null) {
-			// Real player
-			return player.hasPermission(perm);
-		} else {
-			// Console has permissions for everything
-			return true;
-		}
-	}
-	
-	/*
-	 * Check required permission and send error response to player if not allowed
-	 */
-	public boolean RequirePermission(Player player, String perm) {
-		if (!HasPermission(player, perm)) {
-			player.sendMessage(ChatColor.RED + "Sorry, you do not have permission for this command.");
-			return false;
-		}
-		return true;
-	}
-	
-	/*
-	 * Check if it is the player's birthday today
-	 */
-	public boolean IsPlayerBirthday(BirthdayRecord birthday) {
-		// Is there a birthday record for this player?
-		if (birthday != null) {
-			// Get current date without year/time
-			SimpleDateFormat sdf = new SimpleDateFormat("MM-dd");
-			String today = sdf.format(new Date());
-			String bdate = sdf.format(birthday.birthdayDate);
+            // Check if today is the player's birthday (ignoring year)
+            return bdate.equals(today);
+        }
+        return false;
+    }
+    
+    /*
+     * Check if the player has already received a gift today
+     */
+    public boolean ReceivedGiftToday(BirthdayRecord birthday) {
+        // Is there a birthday record for this player?
+        if (birthday != null) {
+            if (birthday.lastGiftDate == null) {
+                // Player has never received birthday gifts
+                Debug("Never received a gift");
+                return false;
+            }
 
-			// Check if today is the player's birthday (ignoring year)
-			return bdate.equals(today);
-		}
-		return false;
-	}
-	
-	/*
-	 * Check if the player has already received a gift today
-	 */
-	public boolean ReceivedGiftToday(BirthdayRecord birthday) {
-		// Is there a birthday record for this player?
-		if (birthday != null) {
-			if (birthday.lastGiftDate == null) {
-				// Player has never received birthday gifts
-				Debug("Never received a gift");
-				return false;
-			}
+            // Get current date without time (annoying, right?)
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date today;
+            try {
+                today = sdf.parse(sdf.format(new Date()));
+            } catch (ParseException e) {
+                // This should never happen!
+                getLogger().warning("Unable to parse current date!");
+                e.printStackTrace();
+                return false;
+            }
 
-			// Get current date without time (annoying, right?)
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date today;
-			try {
-				today = sdf.parse(sdf.format(new Date()));
-			} catch (ParseException e) {
-				// This should never happen!
-				getLogger().warning("Unable to parse current date!");
-				e.printStackTrace();
-				return false;
-			}
+            // Check if player has received a gift today
+            if (birthday.lastGiftDate.equals(today)) {
+                Debug("Already receieved a gift today");
+                return true;
+            } else {
+                Debug("Hasn't received a gift today");
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    public int getAge(Date dateOfBirth) {
+        Calendar now = Calendar.getInstance();
+        Calendar dob = Calendar.getInstance();
 
-			// Check if player has received a gift today
-			if (birthday.lastGiftDate.equals(today)) {
-				Debug("Already receieved a gift today");
-				return true;
-			} else {
-				Debug("Hasn't received a gift today");
-				return false;
-			}
-		}
-		return false;
-	}
-		
-	public int getAge(Date dateOfBirth) {
-	    Calendar now = Calendar.getInstance();
-	    Calendar dob = Calendar.getInstance();
+        dob.setTime(dateOfBirth);
 
-	    dob.setTime(dateOfBirth);
+        int age = now.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
 
-	    int age = now.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+        if (now.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR))
+        {
+            age--;
+        }
 
-	    if (now.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) 
-	    {
-	        age--;
-	    }
-
-	    return age;
-	}
-	
-	public Bungee getBungee() {
-		return bungee;
-	}
+        return age;
+    }
+    
+    public Bungee getBungee() {
+        return bungee;
+    }
 }

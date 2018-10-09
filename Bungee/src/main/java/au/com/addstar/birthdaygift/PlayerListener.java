@@ -61,27 +61,24 @@ public class PlayerListener implements Listener {
 			// Delay the broadcast so the player sees it as the last message on
 			// their screen
 			ProxyServer.getInstance().getScheduler()
-					.schedule(plugin, new Runnable() {
-						@Override
-						public void run() {
-							// Broadcast birthday message (if set, and hasn't
-							// already happened today)
-							if (!plugin.ReceivedGiftToday(birthday)) {
-								// Broadcast the announcement
-								if (BungeeChat.instance.getSyncManager().getPropertyBoolean(player, "VNP:online", true) && !Messages.Announce.isEmpty()) {
-									if (!plugin.AnnouncedToday(birthday)) {
-										plugin.dbcon.setAnnounceDate(player.getUniqueId(), new Date());
-										String msg = Messages.Announce.replaceAll("<PLAYER>", player.getDisplayName());
-										msg = ChatColor.translateAlternateColorCodes('&', msg);
-										ProxyServer.getInstance().broadcast(TextComponent.fromLegacyText(msg));
-									}
+					.schedule(plugin, () -> {
+						// Broadcast birthday message (if set, and hasn't
+						// already happened today)
+						if (!plugin.ReceivedGiftToday(birthday)) {
+							// Broadcast the announcement
+							if (BungeeChat.instance.getSyncManager().getPropertyBoolean(player, "VNP:online", true) && !Messages.Announce.isEmpty()) {
+								if (!plugin.AnnouncedToday(birthday)) {
+									plugin.dbcon.setAnnounceDate(player.getUniqueId(), new Date());
+									String msg1 = Messages.Announce.replaceAll("<PLAYER>", player.getDisplayName());
+									msg1 = ChatColor.translateAlternateColorCodes('&', msg1);
+									ProxyServer.getInstance().broadcast(TextComponent.fromLegacyText(msg1));
 								}
-
-								// Remind player about how to claim
-								String msg = Messages.Claim.replaceAll("<PLAYER>", player.getDisplayName());
-								msg = ChatColor.translateAlternateColorCodes('&', msg);
-								player.sendMessage(TextComponent.fromLegacyText(msg));
 							}
+
+							// Remind player about how to claim
+							String msg1 = Messages.Claim.replaceAll("<PLAYER>", player.getDisplayName());
+							msg1 = ChatColor.translateAlternateColorCodes('&', msg1);
+							player.sendMessage(TextComponent.fromLegacyText(msg1));
 						}
 					}, 1, TimeUnit.SECONDS);
 		}

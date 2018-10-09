@@ -19,7 +19,7 @@ public class Config {
 		plugin = instance;
 	}
 	
-	public boolean load() {
+	boolean load() {
 		File configFile = new File(plugin.getDataFolder(), "config.properties");
 		// Copy the default config over
 		if (!configFile.exists()) {
@@ -44,7 +44,6 @@ public class Config {
 		try {
 			in = new FileInputStream(configFile);
 			config.load(in);
-			
 			plugin.DebugEnabled = getBoolean("debug", false);
 		} catch (IOException e) {
 			plugin.getLogger().warning("Failed to load config:");
@@ -57,7 +56,7 @@ public class Config {
 		return true;
 	}
 	
-	public boolean getBoolean(String key, boolean def) {
+	 boolean getBoolean(String key, boolean def) {
 		if (config.containsKey(key)) {
 			return Boolean.parseBoolean(config.getProperty(key));
 		} else {
@@ -65,7 +64,7 @@ public class Config {
 		}
 	}
 	
-	public int getInt(String key, int def) {
+	int getInt(String key, int def) {
 		if (config.containsKey(key)) {
 			try {
 				return Integer.parseInt(config.getProperty(key));
@@ -77,7 +76,7 @@ public class Config {
 		}
 	}
 	
-	public String getString(String key, String def) {
+	String getString(String key, String def) {
 		return config.getProperty(key, def);
 	}
 }

@@ -108,6 +108,7 @@ public class Bungee implements PluginMessageListener
 		}
 	}
 	
+	
 	private void onClaimGifts(DataInputStream in) throws IOException {
 		UUID playerId = UUID.fromString(in.readUTF());
 		boolean success = in.readBoolean();
@@ -165,7 +166,7 @@ public class Bungee implements PluginMessageListener
 		
 		send(out);
 		
-		mGetBirthdayWaiters.add(new WaitingHandler<BirthdayRecord, UUID>(callback, player.getUniqueId()));
+		mGetBirthdayWaiters.add(new WaitingHandler<>(callback, player.getUniqueId()));
 	}
 	
 	public void getStats(ResultCallback<BirthdayStats> callback) {
@@ -174,7 +175,7 @@ public class Bungee implements PluginMessageListener
 		
 		send(out);
 		
-		mGetStatsWaiters.add(new WaitingHandler<BirthdayStats, Void>(callback, null));
+		mGetStatsWaiters.add(new WaitingHandler<>(callback, null));
 	}
 	
 	public void claimGift(Player player, ResultCallback<Boolean> callback) {
@@ -184,7 +185,7 @@ public class Bungee implements PluginMessageListener
 		
 		send(out);
 		
-		mClaimWaiters.add(new WaitingHandler<Boolean, UUID>(callback, player.getUniqueId()));
+		mClaimWaiters.add(new WaitingHandler<>(callback, player.getUniqueId()));
 	}
 	
 	public void resetGiftStatus(PlayerDefinition player) {
