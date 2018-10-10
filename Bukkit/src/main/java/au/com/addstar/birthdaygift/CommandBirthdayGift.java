@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -147,7 +148,7 @@ public class CommandBirthdayGift implements CommandExecutor {
                                     
                                     if (claimed) {
                                         // It's your birthday and you haven't received a gift yet!! :D
-                                        
+                                        Bukkit.getPluginManager().callEvent(new BirthdayEvent(rec.birthdayDate,player));
                                         if (!plugin.giftMessage.isEmpty()) {
                                             String msg = plugin.giftMessage.replaceAll("<PLAYER>", sender.getName());
                                             msg = ChatColor.translateAlternateColorCodes('&', msg);

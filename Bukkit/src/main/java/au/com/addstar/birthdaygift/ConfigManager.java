@@ -94,8 +94,9 @@ public class ConfigManager {
 	}
 	
 	public void saveConfig(){
-		//This updates the reward lists
+		//This updates the reward lists and removes the old item style rewards.
 		config().set("item-serialized",plugin.rewardItems);
+		config().set("items",null);
 		try {
 			config().save(new File(plugin.getDataFolder(), "config.yml"));
 		}catch (IOException e){

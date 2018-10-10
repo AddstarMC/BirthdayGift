@@ -20,7 +20,7 @@ money: 1000
 #	false = DD-MM-YYYY  (European date format)    
 us-date-format: false 
 
-# Which items to give to the player on their birthday
+# Which items to give to the player on their birthday  *** THIS IS DEPRECATED AND WILL BE REMOVED IN 1.13 **
 # Leave list empty to disable
 # Format is: <ITEM>[,AMOUNT]
 # (NOTE: ITEM can be ITEM ID or ITEM NAME, and can also include a data value)
@@ -38,3 +38,14 @@ items:
   - DIAMOND,5
   - EMERALD,5
   - BEACON,1
+# **** THE ABOVE SHOULD BE REMOVED ONCE YOUR USING THE serialized form below.
+#
+# This is the new format for the item rewards..effectively a serialized itemstack list  - the easiest way to add and
+# remove rewards is using the in game commands.
+items-serialized:
+- ==: org.bukkit.inventory.ItemStack
+  type: COOKIE
+  amount: 2
+- ==: org.bukkit.inventory.ItemStack
+  type: DIAMOND
+  amount: 5
