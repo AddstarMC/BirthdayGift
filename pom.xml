@@ -13,7 +13,7 @@
         <bungee.version>1.12-SNAPSHOT</bungee.version>
         <bungeechat.version>1.2.0-SNAPSHOT</bungeechat.version>
         <monolith.version>1.4.8-SNAPSHOT</monolith.version>
-        <vaultapi.version>1.6</vaultapi.version>
+        <vaultapi.version>1.7</vaultapi.version>
     </properties>
   <repositories>
     <!-- Addstar repo -->
