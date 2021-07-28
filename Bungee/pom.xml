@@ -29,7 +29,7 @@
     <!-- BungeeCord repo -->
     <repository>
       <id>md_5</id>
-      <url>https://oss.sonatype.org/content/groups/public/</url>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
   </repositories>
 
@@ -50,11 +50,6 @@
 	  <optional>true</optional>
 	</dependency>
 	
-  	<dependency>
-  		<groupId>au.com.addstar</groupId>
-  		<artifactId>BungeeChat-Proxy</artifactId>
-  		<version>${bungeechat.version}</version>
-  	</dependency>
   </dependencies>
     <build>
         <resources>

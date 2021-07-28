@@ -9,7 +9,6 @@ import java.util.Properties;
 import com.google.common.io.Closeables;
 
 public class Messages {
-	public static String Join = "";
 	public static String Announce = "";
 	public static String Claim = "";
 
@@ -27,7 +26,6 @@ public class Messages {
 		Properties values = new Properties();
 		values.load(stream);
 
-		Join = values.getProperty("join", "");
 		Announce = values.getProperty("announcement", "");
 		Claim = values.getProperty("claim", "");
 	}

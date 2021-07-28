@@ -25,11 +25,10 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
-import au.com.addstar.bc.BungeeChat;
-import au.com.addstar.bc.event.BCPlayerJoinEvent;
 
 public class PlayerListener implements Listener {
 
@@ -40,47 +39,36 @@ public class PlayerListener implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onPlayerJoin(BCPlayerJoinEvent event) {
+	public void onPlayerJoin(PostLoginEvent event) {
 		final ProxiedPlayer player = event.getPlayer();
 
-		// Do not do broadcasts/join messages if another plugin silenced the
-		// join message (eg. VanishNoPacket)
-		if (event.getJoinMessage() == null) {
+		// Give a player this permission to disable announcing their birthday
+		// (useful to keep silent login even on the player's birthday)
+		if (player.hasPermission("birthdaygift.silent"))
 			return;
-		}
 
 		final BirthdayRecord birthday = plugin.dbcon.getBirthday(player.getUniqueId());
 		if (plugin.IsPlayerBirthday(birthday)) {
 			plugin.getLogger().info("Today is " + player.getName() + "'s birthday!");
 
-			// Set special join message
-			String msg = Messages.Join.replaceAll("<PLAYER>",player.getDisplayName());
-			msg = ChatColor.translateAlternateColorCodes('&', msg);
-			event.setJoinMessage(msg);
+			// Delay the broadcast so the player sees it as the last message on their screen
+			ProxyServer.getInstance().getScheduler().schedule(plugin, () -> {
+				// Broadcast birthday message (if set, and hasn't already happened today)
+				if (!plugin.ReceivedGiftToday(birthday)) {
+					// Broadcast the announcement
+					if (!plugin.AnnouncedToday(birthday)) {
+						plugin.dbcon.setAnnounceDate(player.getUniqueId(), new Date());
+						String msg = Messages.Announce.replaceAll("<PLAYER>", player.getDisplayName());
+						ProxyServer.getInstance().broadcast(TextComponent.fromLegacyText(
+							ChatColor.translateAlternateColorCodes('&', msg)));
+					}
 
-			// Delay the broadcast so the player sees it as the last message on
-			// their screen
-			ProxyServer.getInstance().getScheduler()
-					.schedule(plugin, () -> {
-						// Broadcast birthday message (if set, and hasn't
-						// already happened today)
-						if (!plugin.ReceivedGiftToday(birthday)) {
-							// Broadcast the announcement
-							if (BungeeChat.instance.getSyncManager().getPropertyBoolean(player, "VNP:online", true) && !Messages.Announce.isEmpty()) {
-								if (!plugin.AnnouncedToday(birthday)) {
-									plugin.dbcon.setAnnounceDate(player.getUniqueId(), new Date());
-									String msg1 = Messages.Announce.replaceAll("<PLAYER>", player.getDisplayName());
-									msg1 = ChatColor.translateAlternateColorCodes('&', msg1);
-									ProxyServer.getInstance().broadcast(TextComponent.fromLegacyText(msg1));
-								}
-							}
-
-							// Remind player about how to claim
-							String msg1 = Messages.Claim.replaceAll("<PLAYER>", player.getDisplayName());
-							msg1 = ChatColor.translateAlternateColorCodes('&', msg1);
-							player.sendMessage(TextComponent.fromLegacyText(msg1));
-						}
-					}, 1, TimeUnit.SECONDS);
+					// Remind player about how to claim
+					String msg1 = Messages.Claim.replaceAll("<PLAYER>", player.getDisplayName());
+					msg1 = ChatColor.translateAlternateColorCodes('&', msg1);
+					player.sendMessage(TextComponent.fromLegacyText(msg1));
+				}
+			}, 1, TimeUnit.SECONDS);
 		}
 	}
 }
